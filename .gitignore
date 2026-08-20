@@ -1,0 +1,22 @@
+# Backend - Java/Spring Boot
+backend/target/
+backend/*.log
+backend/replay_pid*.log
+backend/hs_err_pid*.log
+backend/uploads/
+backend/.idea/
+backend/*.class
+backend/src/main/resources/application.properties
+
+# Frontend - React/Node
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/src/.env
+frontend/src/.env.local
+frontend/.env
+frontend/.env.local
+
+# Général
+.DS_Store
+*.log
