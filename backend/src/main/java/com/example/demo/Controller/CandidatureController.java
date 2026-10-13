@@ -2,9 +2,13 @@ package com.example.demo.Controller;
 
 
 
+import com.example.demo.Dto.AvisDto;
 import com.example.demo.Dto.Candidaturedto;
+import com.example.demo.Dto.NotationRequest;
+import com.example.demo.Dto.UserPrincipal;
 import com.example.demo.service.CandidatureService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.lang.Long;
@@ -48,5 +52,15 @@ public class CandidatureController {
     @GetMapping("/{id}/stats")
     public ResponseEntity<Map<String, Object>> getStats(@PathVariable Long id) {
         return ResponseEntity.ok(candidatureService.getStatsProjet(id));
+    }
+    @PutMapping("/{id}/avis")
+    public ResponseEntity<Candidaturedto> noter(
+            @PathVariable Long id,
+            @RequestBody NotationRequest request,     @AuthenticationPrincipal UserPrincipal user) {
+        return ResponseEntity.ok(candidatureService.noterFreelance(id, request.getNote(), request.getCommentaire(),user));
+    }
+    @GetMapping("/{id}/avis")
+    public ResponseEntity<List<AvisDto>> getAvis(@PathVariable Long id) {
+        return ResponseEntity.ok(candidatureService.getAvis(id));
     }
 }

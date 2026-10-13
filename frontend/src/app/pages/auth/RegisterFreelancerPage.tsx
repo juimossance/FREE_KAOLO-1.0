@@ -1,313 +1,987 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { User, Mail, Lock, Phone, Briefcase, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
-
-const skills = ["Développement Web", "Design UI/UX", "Marketing Digital", "Rédaction", "Data Science", "Mobile", "DevOps", "Graphisme", "SEO", "Vidéo"];
+import {
+  User,
+  Mail,
+  Lock,
+  Phone,
+  ArrowRight,
+  ArrowLeft,
+  Loader2,
+  Eye,
+  EyeOff,
+  Check,
+} from "lucide-react";
 
 export function RegisterFreelancerPage() {
+  const navigate = useNavigate();
+
   const [step, setStep] = useState(1);
- const [error, setError] = useState<string | null>(null);
- const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
+
   const [form, setForm] = useState({
-    firstName: "", lastName: "", email: "", phone: "", password: "",
-    specialty: "", experience: "", country: "Côte d'Ivoire", description: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
   });
-const navigate = useNavigate();
-  const toggleSkill = (skill: string) => {
-    setSelectedSkills(s => s.includes(skill) ? s.filter(x => x !== skill) : [...s, skill]);
+
+  /*
+   * ============================================================
+   * VALIDATION DU TÉLÉPHONE CAMEROUNAIS
+   * ============================================================
+   *
+   * Formats acceptés :
+   * 6XXXXXXXX
+   * +237 6XXXXXXXX
+   * +2376XXXXXXXX
+   * 2376XXXXXXXX
+   *
+   * On accepte également les espaces.
+   */
+  const isValidCameroonPhone = (phone: string) => {
+    const normalized = phone.replace(/[\s-]/g, "");
+
+    return (
+      /^6\d{8}$/.test(normalized) ||
+      /^\+2376\d{8}$/.test(normalized) ||
+      /^2376\d{8}$/.test(normalized)
+    );
   };
 
-  const handleNext = () => {
-    if (step < 3) setStep(s => s + 1);
+  /*
+   * ============================================================
+   * VALIDATION DE L'EMAIL
+   * ============================================================
+   */
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  /*
+   * ============================================================
+   * VALIDATION DU SLIDE 1
+   * ============================================================
+   */
+  const validateStep1 = () => {
     setError(null);
 
-    // 1. On traduit notre state React vers la forme attendue par le backend
-  const payload = {
-    nom: form.lastName,
-    prenom: form.firstName,
-    email: form.email,
-    password: form.password,
-    phone: form.phone,
-    pays: form.country,
-    specialite: form.specialty,
-    competence: selectedSkills, // déjà un tableau de strings, parfait
-    experience: form.experience,
-    description: form.description,
-  };
-    try {
-    // 2. L'appel réseau lui-même
-    const response = await fetch("http://localhost:8080/api/auth/register/prestataire", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      
-      body: JSON.stringify(payload),
-      
-    });
-navigate(`/verify-email`)
-    // 3. Gestion des erreurs HTTP (4xx, 5xx)
-    if (!response.ok) {
-      const message = await response.text();
-      throw new Error(message || "Une erreur est survenue lors de l'inscription.");
-
+    if (!form.firstName.trim()) {
+      setError("Veuillez renseigner votre prénom.");
+      return false;
     }
 
-  
-  } catch (err) {
-    setError(err instanceof Error ? err.message : "Erreur réseau, veuillez réessayer.");
-  } finally {
-    setLoading(false);
-  }
-}; 
+    if (form.firstName.trim().length < 2) {
+      setError("Le prénom doit contenir au moins 2 caractères.");
+      return false;
+    }
 
-    
+    if (!form.lastName.trim()) {
+      setError("Veuillez renseigner votre nom.");
+      return false;
+    }
 
+    if (form.lastName.trim().length < 2) {
+      setError("Le nom doit contenir au moins 2 caractères.");
+      return false;
+    }
 
-  const inputClass = "w-full px-4 py-3 rounded-xl text-sm border outline-none transition-all";
-  const inputStyle = { borderColor: "var(--border)", background: "var(--card)", color: "var(--foreground)" };
-const inputdescription = "w-full px-4 py-5 rounded-xl text-sm border outline-none transition-all";
+    if (!form.phone.trim()) {
+      setError("Veuillez renseigner votre numéro de téléphone.");
+      return false;
+    }
+
+    if (!isValidCameroonPhone(form.phone)) {
+      setError(
+        "Veuillez entrer un numéro camerounais valide. Exemple : 6XXXXXXXX ou +237 6XXXXXXXX."
+      );
+      return false;
+    }
+
+    if (!form.email.trim()) {
+      setError("Veuillez renseigner votre adresse email.");
+      return false;
+    }
+
+    if (!isValidEmail(form.email)) {
+      setError("Veuillez entrer une adresse email valide.");
+      return false;
+    }
+
+    return true;
+  };
+
+  /*
+   * ============================================================
+   * VALIDATION DU SLIDE 2
+   * ============================================================
+   */
+  const validateStep2 = () => {
+    setError(null);
+
+    if (!form.password) {
+      setError("Veuillez renseigner votre mot de passe.");
+      return false;
+    }
+
+    if (form.password.length < 8) {
+      setError(
+        "Le mot de passe doit contenir au moins 8 caractères."
+      );
+      return false;
+    }
+
+    if (!form.confirmPassword) {
+      setError("Veuillez confirmer votre mot de passe.");
+      return false;
+    }
+
+    if (form.password !== form.confirmPassword) {
+      setError("Les deux mots de passe ne correspondent pas.");
+      return false;
+    }
+
+    return true;
+  };
+
+  /*
+   * ============================================================
+   * PASSAGE AU SLIDE SUIVANT
+   * ============================================================
+   */
+  const handleNext = () => {
+    setError(null);
+
+    if (step === 1) {
+      if (validateStep1()) {
+        setStep(2);
+      }
+
+      return;
+    }
+
+    if (step === 2) {
+      if (validateStep2()) {
+        setStep(3);
+      }
+
+      return;
+    }
+  };
+
+  /*
+   * ============================================================
+   * RETOUR AU SLIDE PRÉCÉDENT
+   * ============================================================
+   */
+  const handleBack = () => {
+    setError(null);
+
+    if (step > 1) {
+      setStep((currentStep) => currentStep - 1);
+    }
+  };
+
+  /*
+   * ============================================================
+   * INSCRIPTION
+   * ============================================================
+   */
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    setError(null);
+
+    /*
+     * Sécurité supplémentaire :
+     * même si l'utilisateur arrive au slide 3,
+     * on revalide toutes les informations avant l'envoi.
+     */
+    if (!validateStep1()) {
+      setStep(1);
+      return;
+    }
+
+    if (!validateStep2()) {
+      setStep(2);
+      return;
+    }
+
+    setLoading(true);
+
+    /*
+     * IMPORTANT :
+     *
+     * On envoie uniquement les informations nécessaires
+     * à la création du compte.
+     *
+     * Les compétences, l'expérience, la spécialité,
+     * le CV, etc. seront complétés après l'inscription.
+     */
+    const payload = {
+      nom: form.lastName.trim(),
+      prenom: form.firstName.trim(),
+      email: form.email.trim(),
+      phone: form.phone.replace(/[\s-]/g, ""),
+      password: form.password,
+    };
+
+    try {
+      const response = await fetch(
+        "http://localhost:8080/api/auth/register/prestataire",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        let message = "Une erreur est survenue lors de l'inscription.";
+
+        try {
+          const data = await response.json();
+
+          if (typeof data === "string") {
+            message = data;
+          } else if (data?.message) {
+            message = data.message;
+          } else if (data?.error) {
+            message = data.error;
+          }
+        } catch {
+          const text = await response.text();
+
+          if (text) {
+            message = text;
+          }
+        }
+
+        throw new Error(message);
+      }
+
+      /*
+       * Inscription réussie.
+       *
+       * On ne connecte pas automatiquement l'utilisateur ici.
+       * On l'envoie vers la vérification email.
+       */
+      navigate("/verify-email");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Erreur réseau, veuillez réessayer."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /*
+   * ============================================================
+   * STYLES
+   * ============================================================
+   */
+  const inputClass =
+    "w-full px-4 py-3 rounded-xl text-sm border outline-none transition-all";
+
+  const inputStyle = {
+    borderColor: "var(--border)",
+    background: "var(--card)",
+    color: "var(--foreground)",
+  };
+
+  /*
+   * ============================================================
+   * AFFICHAGE
+   * ============================================================
+   */
   return (
     <div>
+      {/* ======================================================
+          TITRE
+      ======================================================= */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: "var(--navy)" }}>Inscription Freelancer</h1>
-        <p className="mt-1.5 text-sm" style={{ color: "var(--muted-foreground)" }}>Rejoignez la communauté des talents free-kaolo</p>
+        <h1
+          className="text-2xl font-bold"
+          style={{ color: "var(--navy)" }}
+        >
+          Inscription Freelancer
+        </h1>
+
+        <p
+          className="mt-1.5 text-sm"
+          style={{ color: "var(--muted-foreground)" }}
+        >
+          Créez votre compte et rejoignez la communauté
+          Free-Kaolo
+        </p>
       </div>
 
-      {/* Steps */}
+      {/* ======================================================
+          INDICATEUR DES ÉTAPES
+      ======================================================= */}
       <div className="flex items-center gap-2 mb-8">
         {[1, 2, 3].map((s) => (
           <div key={s} className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all"
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all"
               style={{
-                background: s <= step ? "var(--navy)" : "var(--muted)",
-                color: s <= step ? "#FFF" : "var(--muted-foreground)",
-              }}>
-              {s < step ? "✓" : s}
+                background:
+                  s <= step ? "var(--navy)" : "var(--muted)",
+                color:
+                  s <= step ? "#FFF" : "var(--muted-foreground)",
+              }}
+            >
+              {s < step ? <Check size={15} /> : s}
             </div>
-            <span className="text-xs font-medium hidden sm:block"
-              style={{ color: s <= step ? "var(--navy)" : "var(--muted-foreground)" }}>
-              {s === 1 ? "Identité" : s === 2 ? "Compétences" : "Finalisation"}
+
+            <span
+              className="text-xs font-medium hidden sm:block"
+              style={{
+                color:
+                  s <= step
+                    ? "var(--navy)"
+                    : "var(--muted-foreground)",
+              }}
+            >
+              {s === 1
+                ? "Identité"
+                : s === 2
+                ? "Sécurité"
+                : "Confirmation"}
             </span>
-            {s < 3 && <div className="w-8 h-px mx-1" style={{ background: step > s ? "var(--gold)" : "var(--border)" }} />}
+
+            {s < 3 && (
+              <div
+                className="w-8 h-px mx-1"
+                style={{
+                  background:
+                    step > s
+                      ? "var(--gold)"
+                      : "var(--border)",
+                }}
+              />
+            )}
           </div>
         ))}
       </div>
 
+      {/* ======================================================
+          MESSAGE D'ERREUR GLOBAL
+      ======================================================= */}
+      {error && (
+        <div
+          className="mb-5 p-3 rounded-xl text-sm border"
+          style={{
+            background: "#FEF2F2",
+            borderColor: "#FECACA",
+            color: "var(--destructive)",
+          }}
+        >
+          {error}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit}>
+        {/* ====================================================
+            SLIDE 1 : IDENTITÉ
+        ===================================================== */}
         {step === 1 && (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            {/* PRÉNOM + NOM */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* PRÉNOM */}
               <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--navy)" }}>Prénom</label>
+                <label
+                  className="block text-sm font-medium mb-1.5"
+                  style={{ color: "var(--navy)" }}
+                >
+                  Prénom
+                </label>
+
                 <div className="relative">
-                  <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input className={inputClass} style={inputStyle} type="text" placeholder="Kofi" value={form.firstName}
-                    onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} />
+                  <User
+                    size={15}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+
+                  <input
+                    className={`${inputClass} pl-10`}
+                    style={inputStyle}
+                    type="text"
+                    placeholder="Christian"
+                    autoComplete="given-name"
+                    value={form.firstName}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        firstName: e.target.value,
+                      }))
+                    }
+                  />
                 </div>
               </div>
+
+              {/* NOM */}
               <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--navy)" }}>Nom</label>
-                <input className={inputClass} style={inputStyle} type="text" placeholder="Mensah" value={form.lastName}
-                  onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} />
+                <label
+                  className="block text-sm font-medium mb-1.5"
+                  style={{ color: "var(--navy)" }}
+                >
+                  Nom
+                </label>
+
+                <div className="relative">
+                  <User
+                    size={15}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+
+                  <input
+                    className={`${inputClass} pl-10`}
+                    style={inputStyle}
+                    type="text"
+                    placeholder="Juimo"
+                    autoComplete="family-name"
+                    value={form.lastName}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        lastName: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
               </div>
             </div>
+
+            {/* TÉLÉPHONE */}
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--navy)" }}>Email</label>
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--navy)" }}
+              >
+                Numéro de téléphone
+              </label>
+
               <div className="relative">
-                <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input className={`${inputClass} pl-10`} style={inputStyle} type="email" placeholder="kofi@exemple.com"
-                  value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+                <Phone
+                  size={15}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+
+                <input
+                  className={`${inputClass} pl-10`}
+                  style={inputStyle}
+                  type="tel"
+                  placeholder="6XX XX XX XX"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  value={form.phone}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      phone: e.target.value,
+                    }))
+                  }
+                />
               </div>
+
+              <p
+                className="mt-1.5 text-xs"
+                style={{ color: "var(--muted-foreground)" }}
+              >
+                Exemple : 690 12 34 56 ou +237 690 12 34 56
+              </p>
             </div>
+
+            {/* EMAIL */}
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--navy)" }}>Téléphone</label>
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--navy)" }}
+              >
+                Adresse email
+              </label>
+
               <div className="relative">
-                <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input className={`${inputClass} pl-10`} style={inputStyle} type="tel" placeholder="+225 07 01 02 03 04"
-                  value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+                <Mail
+                  size={15}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+
+                <input
+                  className={`${inputClass} pl-10`}
+                  style={inputStyle}
+                  type="email"
+                  placeholder="vous@exemple.com"
+                  autoComplete="email"
+                  value={form.email}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      email: e.target.value,
+                    }))
+                  }
+                />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--navy)" }}>Pays</label>
-              <select className={inputClass} style={inputStyle} value={form.country}
-                onChange={e => setForm(f => ({ ...f, country: e.target.value }))}>
-                <option>Côte d'Ivoire</option>
-                <option>Sénégal</option>
-                <option>Ghana</option>
-                <option>Cameroun</option>
-                <option>Mali</option>
-                <option>Burkina Faso</option>
-                <option>Togo</option>
-                <option>Bénin</option>
-              </select>
-            </div>
-            <button type="button" onClick={handleNext}
+
+            {/* BOUTON */}
+            <button
+              type="button"
+              onClick={handleNext}
               className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-semibold"
-              style={{ background: "var(--navy)", color: "#FFF" }}>
-              Continuer <ArrowRight size={16} />
+              style={{
+                background: "var(--navy)",
+                color: "#FFF",
+              }}
+            >
+              Continuer
+              <ArrowRight size={16} />
             </button>
           </div>
         )}
 
+        {/* ====================================================
+            SLIDE 2 : SÉCURITÉ
+        ===================================================== */}
         {step === 2 && (
           <div className="space-y-4">
+            {/* MOT DE PASSE */}
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--navy)" }}>Spécialité principale</label>
-              <div className="relative">
-                <Briefcase size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input className={`${inputClass} pl-10`} style={inputStyle} type="text" placeholder="Développeur Full Stack"
-                  value={form.specialty} onChange={e => setForm(f => ({ ...f, specialty: e.target.value }))} />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--navy)" }}>
-                Compétences <span className="font-normal text-slate-400">(sélectionnez jusqu'à 5)</span>
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--navy)" }}
+              >
+                Mot de passe
               </label>
-              <div className="flex flex-wrap gap-2">
-                {skills.map(skill => (
-                  <button key={skill} type="button" onClick={() => toggleSkill(skill)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all border"
-                    style={{
-                      background: selectedSkills.includes(skill) ? "var(--navy)" : "transparent",
-                      color: selectedSkills.includes(skill) ? "#FFF" : "var(--muted-foreground)",
-                      borderColor: selectedSkills.includes(skill) ? "var(--navy)" : "var(--border)",
-                    }}>
-                    {skill}
-                  </button>
-                ))}
+
+              <div className="relative">
+                <Lock
+                  size={15}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+
+                <input
+                  className={`${inputClass} pl-10 pr-11`}
+                  style={inputStyle}
+                  type={showPwd ? "text" : "password"}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  value={form.password}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      password: e.target.value,
+                    }))
+                  }
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setShowPwd(!showPwd)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  aria-label={
+                    showPwd
+                      ? "Masquer le mot de passe"
+                      : "Afficher le mot de passe"
+                  }
+                >
+                  {showPwd ? (
+                    <EyeOff size={15} />
+                  ) : (
+                    <Eye size={15} />
+                  )}
+                </button>
+              </div>
+
+              {/* INDICATEUR FORCE */}
+              <div className="mt-2 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${Math.min(
+                      (form.password.length / 8) * 100,
+                      100
+                    )}%`,
+                    background:
+                      form.password.length >= 8
+                        ? "var(--success)"
+                        : form.password.length >= 5
+                        ? "var(--warning)"
+                        : "var(--destructive)",
+                  }}
+                />
+              </div>
+
+              <p
+                className="mt-1.5 text-xs"
+                style={{ color: "var(--muted-foreground)" }}
+              >
+                Le mot de passe doit contenir au moins 8
+                caractères.
+              </p>
+            </div>
+
+            {/* CONFIRMATION */}
+            <div>
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--navy)" }}
+              >
+                Confirmer le mot de passe
+              </label>
+
+              <div className="relative">
+                <Lock
+                  size={15}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+
+                <input
+                  className={`${inputClass} pl-10 pr-11`}
+                  style={inputStyle}
+                  type={
+                    showConfirmPwd ? "text" : "password"
+                  }
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  value={form.confirmPassword}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      confirmPassword: e.target.value,
+                    }))
+                  }
+                />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowConfirmPwd(!showConfirmPwd)
+                  }
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  aria-label={
+                    showConfirmPwd
+                      ? "Masquer la confirmation"
+                      : "Afficher la confirmation"
+                  }
+                >
+                  {showConfirmPwd ? (
+                    <EyeOff size={15} />
+                  ) : (
+                    <Eye size={15} />
+                  )}
+                </button>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--navy)" }}>Années d'expérience</label>
-              <select className={inputClass} style={inputStyle} value={form.experience}
-                onChange={e => setForm(f => ({ ...f, experience: e.target.value }))}>
-                <option value="">Sélectionner</option>
-                <option>Moins d'un an</option>
-                <option>1-2 ans</option>
-                <option>3-5 ans</option>
-                <option>5-10 ans</option>
-                <option>Plus de 10 ans</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5 " style={{ color: "var(--navy)" }}> Description</label>
-   <textarea
-  rows={4}
-  placeholder="Décrivez votre expérience, vos projets, etc."
-  value={form.description}
-  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-  className={inputdescription}
-  style={inputStyle}
-/>
-            </div>
+
+            {/* BOUTONS */}
             <div className="flex gap-3">
-              <button type="button" onClick={() => setStep(1)}
-                className="flex-1 py-3 rounded-xl text-sm font-semibold border"
-                style={{ borderColor: "var(--border)", color: "var(--navy)" }}>
+              <button
+                type="button"
+                onClick={handleBack}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold border"
+                style={{
+                  borderColor: "var(--border)",
+                  color: "var(--navy)",
+                }}
+              >
+                <ArrowLeft size={16} />
                 Retour
               </button>
-              <button type="button" onClick={handleNext}
-                className="flex-1 py-3 rounded-xl text-sm font-semibold"
-                style={{ background: "var(--navy)", color: "#FFF" }}>
-                Continuer <ArrowRight size={16} className="inline ml-1" />
+
+              <button
+                type="button"
+                onClick={handleNext}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold"
+                style={{
+                  background: "var(--navy)",
+                  color: "#FFF",
+                }}
+              >
+                Continuer
+                <ArrowRight size={16} />
               </button>
             </div>
           </div>
         )}
 
+        {/* ====================================================
+            SLIDE 3 : CONFIRMATION
+        ===================================================== */}
         {step === 3 && (
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--navy)" }}>Mot de passe</label>
-              <div className="relative">
-                <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input className={`${inputClass} pl-10 pr-11`} style={inputStyle}
-                  type={showPwd ? "text" : "password"} placeholder="••••••••"
-                  value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
-                <button type="button" onClick={() => setShowPwd(!showPwd)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                  {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-              </div>
-              <div className="mt-2 h-1.5 rounded-full bg-slate-200 overflow-hidden">
-                <div className="h-full rounded-full transition-all"
+            {/* MESSAGE */}
+            <div
+              className="p-4 rounded-xl border"
+              style={{
+                borderColor: "var(--border)",
+                background: "#F8FAFC",
+              }}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center"
                   style={{
-                    width: form.password.length > 8 ? "100%" : `${(form.password.length / 8) * 100}%`,
-                    background: form.password.length > 8 ? "var(--success)" : form.password.length > 4 ? "var(--warning)" : "var(--destructive)",
-                  }} />
+                    background: "var(--navy)",
+                    color: "#FFF",
+                  }}
+                >
+                  <Check size={17} />
+                </div>
+
+                <div>
+                  <p
+                    className="text-sm font-semibold"
+                    style={{ color: "var(--navy)" }}
+                  >
+                    Vérifiez vos informations
+                  </p>
+
+                  <p
+                    className="text-xs"
+                    style={{
+                      color: "var(--muted-foreground)",
+                    }}
+                  >
+                    Votre compte sera créé avec ces
+                    informations.
+                  </p>
+                </div>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--navy)" }}>Confirmer le mot de passe</label>
-              <input className={`${inputClass}`} style={inputStyle} type="password" placeholder="••••••••" />
-            </div>
-            <div className="p-4 rounded-xl border" style={{ borderColor: "var(--border)", background: "#F8FAFC" }}>
-              <p className="text-xs font-medium mb-2" style={{ color: "var(--navy)" }}>Résumé de votre profil :</p>
-              <div className="space-y-1.5">
-                {[
-                  { label: "Nom", value: `${form.firstName} ${form.lastName}` || "—" },
-                  { label: "Email", value: form.email || "—" },
-                  { label: "Spécialité", value: form.specialty || "—" },
-                  { label: "Compétences", value: selectedSkills.join(", ") || "Aucune" },
-                ].map(item => (
-                  <div key={item.label} className="flex gap-2 text-xs">
-                    <span className="font-medium" style={{ color: "var(--muted-foreground)" }}>{item.label}:</span>
-                    <span style={{ color: "var(--navy)" }}>{item.value}</span>
-                  </div>
-                ))}
+
+            {/* RÉCAPITULATIF */}
+            <div
+              className="rounded-xl border overflow-hidden"
+              style={{
+                borderColor: "var(--border)",
+              }}
+            >
+              {/* PRÉNOM */}
+              <div className="flex justify-between gap-4 p-4 border-b">
+                <span
+                  className="text-xs font-medium"
+                  style={{
+                    color: "var(--muted-foreground)",
+                  }}
+                >
+                  Prénom
+                </span>
+
+                <span
+                  className="text-sm font-medium text-right"
+                  style={{ color: "var(--navy)" }}
+                >
+                  {form.firstName}
+                </span>
+              </div>
+
+              {/* NOM */}
+              <div className="flex justify-between gap-4 p-4 border-b">
+                <span
+                  className="text-xs font-medium"
+                  style={{
+                    color: "var(--muted-foreground)",
+                  }}
+                >
+                  Nom
+                </span>
+
+                <span
+                  className="text-sm font-medium text-right"
+                  style={{ color: "var(--navy)" }}
+                >
+                  {form.lastName}
+                </span>
+              </div>
+
+              {/* TÉLÉPHONE */}
+              <div className="flex justify-between gap-4 p-4 border-b">
+                <span
+                  className="text-xs font-medium"
+                  style={{
+                    color: "var(--muted-foreground)",
+                  }}
+                >
+                  Téléphone
+                </span>
+
+                <span
+                  className="text-sm font-medium text-right"
+                  style={{ color: "var(--navy)" }}
+                >
+                  {form.phone}
+                </span>
+              </div>
+
+              {/* EMAIL */}
+              <div className="flex justify-between gap-4 p-4">
+                <span
+                  className="text-xs font-medium"
+                  style={{
+                    color: "var(--muted-foreground)",
+                  }}
+                >
+                  Email
+                </span>
+
+                <span
+                  className="text-sm font-medium text-right break-all"
+                  style={{ color: "var(--navy)" }}
+                >
+                  {form.email}
+                </span>
               </div>
             </div>
+
+            {/* INFORMATION */}
+            <div
+              className="p-4 rounded-xl"
+              style={{
+                background: "#F8FAFC",
+              }}
+            >
+              <p
+                className="text-xs leading-5"
+                style={{
+                  color: "var(--muted-foreground)",
+                }}
+              >
+                Après la création de votre compte, vous
+                pourrez compléter votre profil avec votre
+                spécialité, vos compétences, votre expérience,
+                votre CV et vos certifications.
+              </p>
+            </div>
+
+            {/* CONDITIONS */}
             <div className="flex items-start gap-2">
-              <input type="checkbox" required id="terms" className="mt-0.5 w-4 h-4 rounded" />
-              <label htmlFor="terms" className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-                J'accepte les <Link to="#" className="font-medium" style={{ color: "var(--navy)" }}>Conditions d'utilisation</Link> et la{" "}
-                <Link to="#" className="font-medium" style={{ color: "var(--navy)" }}>Politique de confidentialité</Link>
+              <input
+                type="checkbox"
+                required
+                id="terms"
+                className="mt-0.5 w-4 h-4 rounded"
+              />
+
+              <label
+                htmlFor="terms"
+                className="text-xs leading-5"
+                style={{
+                  color: "var(--muted-foreground)",
+                }}
+              >
+                J'accepte les{" "}
+                <Link
+                  to="#"
+                  className="font-medium"
+                  style={{ color: "var(--navy)" }}
+                >
+                  Conditions d'utilisation
+                </Link>{" "}
+                et la{" "}
+                <Link
+                  to="#"
+                  className="font-medium"
+                  style={{ color: "var(--navy)" }}
+                >
+                  Politique de confidentialité
+                </Link>
+                .
               </label>
             </div>
-            
+
+            {/* BOUTONS */}
             <div className="flex gap-3">
-              <button type="button" onClick={() => setStep(2)}
-                className="flex-1 py-3 rounded-xl text-sm font-semibold border"
-                style={{ borderColor: "var(--border)", color: "var(--navy)" }}>
+              <button
+                type="button"
+                onClick={handleBack}
+                disabled={loading}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold border"
+                style={{
+                  borderColor: "var(--border)",
+                  color: "var(--navy)",
+                  opacity: loading ? 0.6 : 1,
+                }}
+              >
+                <ArrowLeft size={16} />
                 Retour
               </button>
-              {error && (
-  <div className="p-3 rounded-xl text-sm" style={{ background: "#FEF2F2", color: "var(--destructive)" }}>
-    {error}
-  </div>
-)}
-              <button type="submit" disabled={loading} 
+
+              <button
+                type="submit"
+                disabled={loading}
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold"
-                style={{ background: "var(--navy)", color: "#FFF", opacity: loading ? 0.7 : 1 }}>
-                {loading ? <><Loader2 size={15} className="animate-spin" /> Inscription...</> : <>Créer mon compte <ArrowRight size={15} /></>}
+                style={{
+                  background: "var(--navy)",
+                  color: "#FFF",
+                  opacity: loading ? 0.7 : 1,
+                }}
+              >
+                {loading ? (
+                  <>
+                    <Loader2
+                      size={15}
+                      className="animate-spin"
+                    />
+                    Inscription...
+                  </>
+                ) : (
+                  <>
+                    Créer mon compte
+                    <ArrowRight size={15} />
+                  </>
+                )}
               </button>
             </div>
           </div>
         )}
       </form>
 
-      <p className="mt-6 text-center text-sm" style={{ color: "var(--muted-foreground)" }}>
+      {/* ======================================================
+          INSCRIPTION ENTREPRISE
+      ======================================================= */}
+      <p
+        className="mt-6 text-center text-sm"
+        style={{ color: "var(--muted-foreground)" }}
+      >
         Vous êtes une entreprise ?{" "}
-        <Link to="/register/enterprise" className="font-semibold" style={{ color: "var(--navy)" }}>
+        <Link
+          to="/register/enterprise"
+          className="font-semibold"
+          style={{ color: "var(--navy)" }}
+        >
           Inscription Entreprise
         </Link>
       </p>
-      <p className="mt-2 text-center text-sm" style={{ color: "var(--muted-foreground)" }}>
+
+      {/* ======================================================
+          CONNEXION
+      ======================================================= */}
+      <p
+        className="mt-2 text-center text-sm"
+        style={{ color: "var(--muted-foreground)" }}
+      >
         Déjà inscrit ?{" "}
-        <Link to="/login" className="font-semibold" style={{ color: "var(--navy)" }}>Se connecter</Link>
+        <Link
+          to="/login"
+          className="font-semibold"
+          style={{ color: "var(--navy)" }}
+        >
+          Se connecter
+        </Link>
       </p>
     </div>
   );
 }
-function setError(arg0: null) {
-  throw new Error("Function not implemented.");
-}
-

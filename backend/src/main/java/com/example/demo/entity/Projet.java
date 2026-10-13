@@ -32,6 +32,26 @@ public class Projet {
     @ManyToOne
     @JoinColumn(name = "entreprise_id")
     private Entreprise entreprise;
+    @Column
+    private Integer progression; // 0-100, nullable
+    @Column
+    private LocalDateTime derniereMiseAJourAvancement;
+
+    public Integer getProgression() {
+        return progression;
+    }
+
+    public void setProgression(Integer progression) {
+        this.progression = progression;
+    }
+
+    public LocalDateTime getDerniereMiseAJourAvancement() {
+        return derniereMiseAJourAvancement;
+    }
+
+    public void setDerniereMiseAJourAvancement(LocalDateTime derniereMiseAJourAvancement) {
+        this.derniereMiseAJourAvancement = derniereMiseAJourAvancement;
+    }
 
     public String getDeadline() {
         return deadline;

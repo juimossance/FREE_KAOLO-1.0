@@ -21,7 +21,7 @@ import { UploadDocuments } from "./app/pages/freelancer/UploadDocuments";
 import { ProjectHistory } from "./app/pages/freelancer/ProjectHistory";
 import { Applications } from "./app/pages/freelancer/Applications";
 import { Ratings } from "./app/pages/freelancer/Ratings";
-import { FreelancerPayments } from "./app/pages/freelancer/FreelancerPayments";
+
 import { FreelancerNotifications } from "./app/pages/freelancer/FreelancerNotifications";
 import { PostProject } from "./app/pages/enterprise/PostProject";
 import { EnterpriseDashboard } from "./app/pages/enterprise/EnterpriseDashboard";
@@ -45,6 +45,8 @@ import { PaymentPage } from "./app/pages/payment/PaymentPage";
 import { AIPageFreelancer } from "./app/pages/freelancer/AIPageFreelancer";
 import { AIPageEnterprise } from "./app/pages/enterprise/AiPageEntreprise";
 import { EnterpriseFreelancerProfile } from "./app/pages/enterprise/EnterpriseFreelancerProfile";
+import { ProjectProgress } from "./app/pages/freelancer/ProjectProgress";
+import { ProjectProgressView } from "./app/pages/enterprise/ProjectProgressView ";
 
 export const router = createBrowserRouter([
   // Redirection racine
@@ -85,9 +87,10 @@ export const router = createBrowserRouter([
         { path: "projects", Component: ProjectHistory },
         { path: "applications", Component: Applications },
         { path: "ratings", Component: Ratings },
-        { path: "payments", Component: FreelancerPayments },
+         { path: "payments", Component: PaymentPage },
+        { path: "payments/:tab", Component: PaymentPage },
         { path: "notifications", Component: FreelancerNotifications },
-
+ { path: "projects/:id/progress", Component: ProjectProgress },
         { path: "messages", Component: MessagingPage },
         { path: "messages/:id", Component: MessagingPage },
 
@@ -114,7 +117,10 @@ export const router = createBrowserRouter([
         { path: "edit-project/:id", Component: EditProject },
 
         { path: "projects", Component: ProjectsList },
-        { path: "projects/:id", Component: ProjectDetails },
+        { path: "projects/:id", Component: ProjectDetails },   
+       { path: "projects/:id", Component: ProjectDetails },   
+        { path: "projects/:id/progress", Component: ProjectProgressView },
+
 
         { path: "search", Component: SearchProfiles },
         { path: "candidates/:projetId", Component: CandidateSelection },

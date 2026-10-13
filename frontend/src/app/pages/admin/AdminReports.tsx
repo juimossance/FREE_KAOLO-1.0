@@ -151,7 +151,9 @@ export function AdminReports() {
                         <p className="font-semibold" style={{ color: "var(--navy)" }}>{report.severity}</p>
                       </div>
                     </div>
+                
                     <div className="flex gap-2 flex-wrap">
+                      
                       {report.status === "En attente" || report.status === "En cours" ? (
                         <>
                           <button onClick={() => updateStatus(report.id, "En cours")}

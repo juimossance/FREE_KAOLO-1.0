@@ -19,7 +19,7 @@ import { UploadDocuments } from "./pages/freelancer/UploadDocuments";
 import { ProjectHistory } from "./pages/freelancer/ProjectHistory";
 import { Applications } from "./pages/freelancer/Applications";
 import { Ratings } from "./pages/freelancer/Ratings";
-import { FreelancerPayments } from "./pages/freelancer/FreelancerPayments";
+
 import { FreelancerNotifications } from "./pages/freelancer/FreelancerNotifications";
 
 import { EnterpriseDashboard } from "./pages/enterprise/EnterpriseDashboard";
@@ -50,12 +50,32 @@ import { AIPageEnterprise } from "./pages/enterprise/AiPageEntreprise";
 import { AIPageFreelancer } from "./pages/freelancer/AIPageFreelancer";
 import { FreelancerMessage } from "./pages/freelancer/FreelancerMessage";
 import { EnterpriseFreelancerProfile } from "./pages/enterprise/EnterpriseFreelancerProfile";
+import { ProjectProgress } from "./pages/freelancer/ProjectProgress";
+import { ProjectProgressView } from "./pages/enterprise/ProjectProgressView ";
+import { CvAiAssistant } from "./pages/freelancer/CvAiAssistant";
+import SkillAssessmentPage from "./pages/freelancer/SkillAssessmentPage";
+import { EntrepriseVerification } from "./pages/enterprise/EntrepriseVerification";
+import { CertifiedBadge } from "./components/CertifiedBadge";
+import { RateFreelancers } from "./pages/enterprise/Ratefreelancers";
+import Projects from "./pages/freelancer/Projects";
+
+
+
+
+
+
+
 
 export const router = createBrowserRouter([
   {
     path: "/",
     Component: LandingPage,
   },
+  {
+    path: "verified",
+    Component: CertifiedBadge,
+  },
+  
   {
     Component: AuthLayout,
     children: [
@@ -81,11 +101,15 @@ export const router = createBrowserRouter([
       { path: "projects", Component: ProjectHistory },
       { path: "applications", Component: Applications },
       { path: "ratings", Component: Ratings },
-      { path: "payments", Component: FreelancerPayments },
       { path: "notifications", Component: FreelancerNotifications },
       { path: "ai", Component: AIPageFreelancer },
        { path: "messages", Component: FreelancerMessage },
-  
+       { path: "progress", Component: ProjectProgress },
+        {path:"evaluate",Component:SkillAssessmentPage},
+    { path: "projects/:id/progress", Component: ProjectProgress },
+    { path: "cv", Component:CvAiAssistant},
+     { path: "M",  Component:Projects},
+      
       
     ],
   },
@@ -100,7 +124,6 @@ export const router = createBrowserRouter([
       { path: "projects", Component: ProjectsList },
       { path: "projects/:id", Component: ProjectDetails },
       { path: "search", Component: SearchProfiles },
-     
      { path: "candidates/:projetId?", Component: CandidateSelection },
       { path: "applications", Component: ManageApplications },
       { path: "history", Component: RecruitmentHistory },
@@ -109,9 +132,10 @@ export const router = createBrowserRouter([
              {
             path: "freelancer/:freelancerId",Component: EnterpriseFreelancerProfile,
                    },
-              
+               { path: "projects/:id/progress", Component: ProjectProgressView },
+                { path: "v", Component: EntrepriseVerification },
            
-
+ { path: "R", Component: RateFreelancers },
     ],
   },
   {

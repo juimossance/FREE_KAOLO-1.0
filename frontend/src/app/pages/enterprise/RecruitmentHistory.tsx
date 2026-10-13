@@ -1,4 +1,3 @@
-
 // src/app/pages/enterprise/RecruitmentHistory.tsx
 
 import { useEffect, useMemo, useState } from "react";
@@ -15,6 +14,7 @@ import {
   Loader2,
   BriefcaseBusiness,
   CircleDollarSign,
+  MessageSquarePlus,
 } from "lucide-react";
 
 import { useAuth } from "../../../hooks/useAuth";
@@ -23,6 +23,7 @@ import {
   type Recruitment,
   type RecruitmentStats,
 } from "../../../services/recrutementService";
+import { NotationModal } from "./NotationModal";
 
 // ─────────────────────────────────────────────────────────────
 // Configuration des statuts
@@ -105,6 +106,11 @@ export function RecruitmentHistory() {
 
   const [filter, setFilter] = useState("Tous");
 
+  // Recrutement actuellement en cours de notation (ouvre la modal si non null)
+  const [notationCible, setNotationCible] = useState<Recruitment | null>(
+    null
+  );
+
   // ───────────────────────────────────────────────────────────
   // Chargement
   // ───────────────────────────────────────────────────────────
@@ -120,7 +126,6 @@ export function RecruitmentHistory() {
         setLoading(true);
         setError(null);
 
-     
         const [recrutementsData, statsData] = await Promise.all([
           recruitmentService.getHistorique(),
           recruitmentService.getStats(),
@@ -128,7 +133,10 @@ export function RecruitmentHistory() {
 
         setRecrutements(recrutementsData);
         setStats(statsData);
-    
+        setRecrutements(recrutementsData);
+console.log("DEBUG recrutements:", recrutementsData.map(r => ({ 
+  id: r.id, status: r.status, note: r.note 
+})));
       } catch (err) {
         setError(
           err instanceof Error
@@ -142,6 +150,22 @@ export function RecruitmentHistory() {
 
     fetchAll();
   }, [entrepriseId]);
+
+  // ───────────────────────────────────────────────────────────
+  // Notation : callback appelé par la modal après succès
+  // ───────────────────────────────────────────────────────────
+
+  const handleNotationSuccess = (
+    recrutementId: number,
+    note: number,
+    commentaire: string
+  ) => {
+    setRecrutements((prev) =>
+      prev.map((r) =>
+        r.id === recrutementId ? { ...r, note, commentaire } : r
+      )
+    );
+  };
 
   // ───────────────────────────────────────────────────────────
   // Données dérivées
@@ -159,9 +183,7 @@ export function RecruitmentHistory() {
       : recrutements;
   }, [recrutements, filter]);
 
-  const termines = recrutements.filter(
-    (r) => r.status === "ACCEPTEE"
-  );
+  const termines = recrutements.filter((r) => r.status === "ACCEPTEE");
 
   const totalDepense =
     stats?.totalDepense ??
@@ -174,11 +196,10 @@ export function RecruitmentHistory() {
   const noteMoy =
     stats?.noteMoyenneDonnee ??
     (notes.length > 0
-      ? notes.reduce(
-          (sum, recruitment) => sum + (recruitment.note ?? 0),
-          0
-        ) / notes.length
+      ? notes.reduce((sum, recruitment) => sum + (recruitment.note ?? 0), 0) /
+        notes.length
       : 0);
+      
 
   // ───────────────────────────────────────────────────────────
   // Loading
@@ -194,10 +215,7 @@ export function RecruitmentHistory() {
             style={{ color: "var(--navy)" }}
           />
 
-          <p
-            className="text-sm"
-            style={{ color: "var(--muted-foreground)" }}
-          >
+          <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
             Chargement de votre historique...
           </p>
         </div>
@@ -218,16 +236,11 @@ export function RecruitmentHistory() {
           </div>
 
           <div>
-            <p
-              className="font-semibold"
-              style={{ color: "var(--navy)" }}
-            >
+            <p className="font-semibold" style={{ color: "var(--navy)" }}>
               Impossible de charger l'historique
             </p>
 
-            <p className="text-sm mt-1 text-slate-500">
-              {error}
-            </p>
+            <p className="text-sm mt-1 text-slate-500">{error}</p>
           </div>
         </div>
       </div>
@@ -240,7 +253,6 @@ export function RecruitmentHistory() {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 py-4 sm:py-6 space-y-5 sm:space-y-6">
-
       {/* ───────────────── Header ───────────────── */}
 
       <section>
@@ -293,7 +305,6 @@ export function RecruitmentHistory() {
       {/* ───────────────── Stats ───────────────── */}
 
       <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-
         {/* Total recrutements */}
         <div
           className="p-4 sm:p-5 rounded-2xl border bg-white"
@@ -310,9 +321,7 @@ export function RecruitmentHistory() {
               <Users size={18} />
             </div>
 
-            <span className="text-xs font-medium text-slate-400">
-              TOTAL
-            </span>
+            <span className="text-xs font-medium text-slate-400">TOTAL</span>
           </div>
 
           <p
@@ -461,12 +470,8 @@ export function RecruitmentHistory() {
                 className="px-3.5 sm:px-4 py-2 rounded-xl text-sm font-medium border transition-all whitespace-nowrap"
                 style={{
                   background: active ? "var(--navy)" : "#FFFFFF",
-                  color: active
-                    ? "#FFFFFF"
-                    : "var(--muted-foreground)",
-                  borderColor: active
-                    ? "var(--navy)"
-                    : "var(--border)",
+                  color: active ? "#FFFFFF" : "var(--muted-foreground)",
+                  borderColor: active ? "var(--navy)" : "var(--border)",
                 }}
               >
                 {item}
@@ -493,10 +498,7 @@ export function RecruitmentHistory() {
             <FileText size={20} />
           </div>
 
-          <p
-            className="font-semibold mt-4"
-            style={{ color: "var(--navy)" }}
-          >
+          <p className="font-semibold mt-4" style={{ color: "var(--navy)" }}>
             Aucun recrutement trouvé
           </p>
 
@@ -511,13 +513,13 @@ export function RecruitmentHistory() {
         </div>
       ) : (
         <div className="space-y-3 sm:space-y-4">
-
           {filtered.map((rec) => {
-            const status =
-              statusConfig[rec.status] ??
-              statusConfig.EN_ATTENTE;
-
+            const status = statusConfig[rec.status] ?? statusConfig.EN_ATTENTE;
             const StatusIcon = status.icon;
+
+            // Terminé mais pas encore noté par cette entreprise
+            const aEvaluer =
+              rec.status === "ACCEPTEE" && (!rec.note || rec.note === 0);
 
             return (
               <article
@@ -526,7 +528,6 @@ export function RecruitmentHistory() {
                 style={{ borderColor: "var(--border)" }}
               >
                 <div className="flex items-start gap-3 sm:gap-4">
-
                   {/* Avatar */}
 
                   <div
@@ -537,20 +538,15 @@ export function RecruitmentHistory() {
                     }}
                   >
                     {rec.freelancerAvatar ??
-                      initiales(
-                        rec.freelancerPrenom,
-                        rec.freelancerNom
-                      )}
+                      initiales(rec.freelancerPrenom, rec.freelancerNom)}
                   </div>
 
                   {/* Contenu */}
 
                   <div className="flex-1 min-w-0">
-
                     {/* Titre */}
 
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-
                       <div className="min-w-0">
                         <h4
                           className="font-semibold text-sm sm:text-base truncate"
@@ -561,12 +557,9 @@ export function RecruitmentHistory() {
 
                         <p
                           className="text-xs sm:text-sm mt-1 truncate"
-                          style={{
-                            color: "var(--muted-foreground)",
-                          }}
+                          style={{ color: "var(--muted-foreground)" }}
                         >
-                          {rec.freelancerPrenom}{" "}
-                          {rec.freelancerNom}
+                          {rec.freelancerPrenom} {rec.freelancerNom}
                         </p>
 
                         {rec.projetCategorie && (
@@ -582,36 +575,46 @@ export function RecruitmentHistory() {
                         )}
                       </div>
 
-                      {/* Statut */}
+                      {/* Statut + badge à évaluer */}
 
-                      <span
-                        className="inline-flex items-center gap-1.5 self-start px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap"
-                        style={{
-                          background: status.bg,
-                          color: status.color,
-                        }}
-                      >
-                        <StatusIcon size={13} />
-                        {status.label}
-                      </span>
+                      <div className="flex flex-col items-end gap-1.5 self-start">
+                        <span
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap"
+                          style={{
+                            background: status.bg,
+                            color: status.color,
+                          }}
+                        >
+                          <StatusIcon size={13} />
+                          {status.label}
+                        </span>
+
+                        {aEvaluer && (
+                          <span
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap"
+                            style={{
+                              background: "#FFFBEB",
+                              color: "#A16207",
+                            }}
+                          >
+                            À évaluer
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Informations */}
 
                     <div
                       className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-xs"
-                      style={{
-                        color: "var(--muted-foreground)",
-                      }}
+                      style={{ color: "var(--muted-foreground)" }}
                     >
                       <span className="flex items-center gap-1.5">
                         <CalendarDays size={13} />
 
                         {formatDate(rec.dateDebut)}
 
-                        {rec.dateFin
-                          ? ` → ${formatDate(rec.dateFin)}`
-                          : " · en cours"}
+                        {rec.dateFin ? ` → ${formatDate(rec.dateFin)}` : " · en cours"}
                       </span>
 
                       <span className="flex items-center gap-1.5">
@@ -621,26 +624,20 @@ export function RecruitmentHistory() {
                       </span>
                     </div>
 
-                    {/* Note */}
+                    {/* Note existante */}
 
                     {rec.note && rec.note > 0 && (
                       <div
                         className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mt-4 p-3 rounded-xl"
-                        style={{
-                          background: "#FAFAF9",
-                        }}
+                        style={{ background: "#FAFAF9" }}
                       >
                         <div className="flex gap-0.5">
-                          {Array.from({
-                            length: rec.note,
-                          }).map((_, index) => (
+                          {Array.from({ length: rec.note }).map((_, index) => (
                             <Star
                               key={index}
                               size={13}
                               fill="var(--gold)"
-                              style={{
-                                color: "var(--gold)",
-                              }}
+                              style={{ color: "var(--gold)" }}
                             />
                           ))}
                         </div>
@@ -648,26 +645,35 @@ export function RecruitmentHistory() {
                         {rec.commentaire && (
                           <p
                             className="text-xs italic line-clamp-2"
-                            style={{
-                              color: "var(--foreground)",
-                            }}
+                            style={{ color: "var(--foreground)" }}
                           >
                             "{rec.commentaire}"
                           </p>
                         )}
                       </div>
                     )}
+
+                    {/* Bouton de notation (fallback) */}
+
+                    {aEvaluer && (
+                      <button
+                        type="button"
+                        onClick={() => setNotationCible(rec)}
+                        className="inline-flex items-center gap-1.5 mt-4 px-3.5 py-2 rounded-xl text-xs font-semibold"
+                        style={{ background: "var(--navy)", color: "#FFFFFF" }}
+                      >
+                        <MessageSquarePlus size={14} />
+                        Noter le freelance
+                      </button>
+                    )}
                   </div>
 
                   {/* Action */}
 
                   <a
-                    href={`/enterprise/projects/${rec.candidatureId}`}
-                    aria-label={`Voir le projet ${rec.projetTitre}`}
+                    href={`/enterprise/projects/${rec.projetId}`}
                     className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-slate-100"
-                    style={{
-                      color: "var(--navy)",
-                    }}
+                    style={{ color: "var(--navy)" }}
                   >
                     <ArrowUpRight size={17} />
                   </a>
@@ -677,7 +683,16 @@ export function RecruitmentHistory() {
           })}
         </div>
       )}
+
+      {/* ───────────────── Modal de notation ───────────────── */}
+
+      {notationCible && (
+        <NotationModal
+          recrutement={notationCible}
+          onClose={() => setNotationCible(null)}
+          onSuccess={handleNotationSuccess}
+        />
+      )}
     </div>
   );
 }
-

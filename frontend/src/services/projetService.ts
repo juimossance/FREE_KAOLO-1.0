@@ -92,7 +92,7 @@ export const projetService = {
     apiFetch(`/projets/projets/${projetId}`),
 
   enregistrerVue: async (projetId: number): Promise<void> => {
-    await apiFetch(`/projets/projets/${projetId}/view`, {
+    await apiFetch(`/projets/${projetId}/view`, {
         method: "POST",
     });
 },
@@ -107,6 +107,8 @@ export const projetService = {
   // Mes projets (utilise entrepriseId du JWT)
   getMesProjets: (entrepriseId: number): Promise<ProjectResponse[]> =>
     apiFetch(`/projets/${entrepriseId}/projets`),
+getMesProjet: (): Promise<ProjectResponse[]> =>
+  apiFetch(`/projets/me`),
 
   // Modifier un projet
   updateProject: (projetId: number, data: Partial<ProjectFormData>): Promise<ProjectResponse> =>
@@ -124,7 +126,7 @@ export const projetService = {
     apiFetch(`/projets/projets/${projetId}/statut?statut=${statut}`, { method: "PUT" }),
 
   // Projets publics (pour les freelancers)
-  getProjetsPublics: (search?: string, categorie?: string): Promise<ProjectResponse[]> => {
+  getProjetscs: (search?: string, categorie?: string): Promise<ProjectResponse[]> => {
     const params = new URLSearchParams();
     if (search) params.append("search", search);
     if (categorie) params.append("categorie", categorie);

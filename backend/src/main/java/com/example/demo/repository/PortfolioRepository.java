@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 @Repository
 public interface PortfolioRepository extends JpaRepository<ProjetPortfolio, Long> {
+
     List<ProjetPortfolio> findByFreelancerIdOrderByAnneeDesc(Long freelancerId);
     List<ProjetPortfolio> findByFreelancerIdAndFeaturedTrue(Long freelancerId);
 }

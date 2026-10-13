@@ -9,7 +9,7 @@ type Notif = {
 
 const initialNotifs: Notif[] = [
   { id: 1, type: "project", icon: <CheckCircle size={16} />, iconBg: "#DCFCE7", title: "Candidature acceptée", description: "TechCorp a accepté votre candidature pour « Refonte Site Corporate »", time: "Il y a 30min", read: false, action: "/messages" },
-  { id: 2, type: "payment", icon: <CreditCard size={16} />, iconBg: "#DBEAFE", title: "Paiement reçu", description: "Vous avez reçu 180 000 FCFA de TechCorp pour « Refonte Site Corporate »", time: "Il y a 2h", read: false, action: "/freelancer/payments" },
+  { id: 2, type: "payment", icon: <CreditCard size={16} />, iconBg: "#DBEAFE", title: "Paiement reçu", description: "Vous avez reçu 180 000 FCFA de TechCorp pour « Refonte Site Corporate »", time: "Il y a 2h", read: false, action: "/payments" },
   { id: 3, type: "message", icon: <MessageSquare size={16} />, iconBg: "#F3E8FF", title: "Nouveau message", description: "FinanceApp: « Pouvez-vous nous envoyer une proposition de délai ? »", time: "Il y a 3h", read: false, action: "/messages" },
   { id: 4, type: "system", icon: <Award size={16} />, iconBg: "#FEF9C3", title: "Certification validée", description: "Votre certification « AWS Cloud Practitioner » a été validée avec succès", time: "Il y a 5h", read: true },
   { id: 5, type: "project", icon: <Briefcase size={16} />, iconBg: "#F0FDF4", title: "Nouveau projet correspondant", description: "3 nouveaux projets React correspondent à votre profil", time: "Il y a 1j", read: true, action: "/enterprise/search" },

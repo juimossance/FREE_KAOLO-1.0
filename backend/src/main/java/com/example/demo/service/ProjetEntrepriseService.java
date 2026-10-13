@@ -29,6 +29,15 @@ public class ProjetEntrepriseService {
         this.projetVueRepository = projetVueRepository;
     }
 // ── CRUD PROJETS ─────────────────────────────────────
+public List<ProjetDto> getProjetsPublics(String search, String categorie, Long freelancerId) {
+    List<ProjetDto> dtos = getProjetsPublics(search, categorie);
+    if (freelancerId != null) {
+        Set<Long> dejaPostules =
+                new HashSet<>(candidatureRepository.findProjetIdsByFreelancerId(freelancerId));
+        dtos.forEach(d -> d.setDejaPostule(dejaPostules.contains(d.getId())));
+    }
+    return dtos;
+}
 
     public ProjetDto publierProjet(Long entrepriseId, ProjetDto dto) {
         Entreprise entreprise = entrepriseRepo.findById(entrepriseId)

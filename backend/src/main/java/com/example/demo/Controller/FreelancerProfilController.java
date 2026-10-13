@@ -30,13 +30,14 @@ private final freelancerRepository Repository;
         return ResponseEntity.ok(service.getProfilByUserId(userId));
     }
 
-    // Idem pour le PUT
-    @PutMapping("/by-user/{userId}/profil")
+ @PutMapping("/by-user/{userId}/profil")
     public ResponseEntity<FreelancerProfilDto> updateProfilByUserId(
             @PathVariable Long userId,
             @RequestBody FreelancerProfilDto dto) {
+
         Freelancer f = Repository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Freelancer non trouvé"));
+
         return ResponseEntity.ok(service.updateProfil(f.getId(), dto));
     }
 
@@ -54,6 +55,15 @@ private final freelancerRepository Repository;
                 java.util.Map.of("pourcentage", dto.getCompletionPourcentage())
         );
     }
+    @GetMapping("/{id}/completions")
+    public ResponseEntity<Integer> calculerCompletion(@PathVariable Long id) {
 
+        Freelancer freelancer = Repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Freelancer introuvable"));
+
+        int completion = service.calculerCompletion(freelancer);
+
+        return ResponseEntity.ok(completion);
+    }
 
     }

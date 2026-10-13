@@ -4,8 +4,8 @@ package com.example.demo.service;
 
 
 
-import com.example.demo.entity.Freelancer;
 import com.example.demo.entity.Competence;
+import com.example.demo.entity.Freelancer;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;

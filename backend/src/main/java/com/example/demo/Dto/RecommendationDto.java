@@ -18,7 +18,7 @@ public class RecommendationDto {
 
     private String specialite;
 
-    private List<Competence> competences;
+    private List<String> competences;
 
     private String ville;
 
@@ -32,11 +32,11 @@ public class RecommendationDto {
 
     private String raison;
 
-    public List<Competence> getCompetences() {
+    public List<String> getCompetences() {
         return competences;
     }
 
-    public void setCompetences(List<Competence> competences) {
+    public void setCompetences(List<String> competences) {
         this.competences = competences;
     }
 

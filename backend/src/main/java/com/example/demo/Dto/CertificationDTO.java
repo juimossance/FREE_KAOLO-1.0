@@ -3,6 +3,7 @@ package com.example.demo.Dto;
 
 
 import com.example.demo.Enum.CertStatus;
+import com.example.demo.Enum.CertType;
 import com.example.demo.entity.Certification;
 
 import java.time.LocalDate;
@@ -20,6 +21,7 @@ public class CertificationDTO {
     private CertStatus status;
     private String motifRejet;
 
+    private CertType type ;
     public CertificationDTO() {
     }
 
@@ -35,7 +37,16 @@ public class CertificationDTO {
         dto.documentUrl = entity.getDocumentUrl();
         dto.status = entity.getStatus();
         dto.motifRejet = entity.getMotifRejet();
+        dto.type=entity.getType();
         return dto;
+    }
+
+    public CertType getType() {
+        return type;
+    }
+
+    public void setType(CertType type) {
+        this.type = type;
     }
 
     public Long getId() { return id; }

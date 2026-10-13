@@ -27,6 +27,39 @@ import {
   type NavChild,
 } from "../../../navigation.config";
 
+// ─── Palette camerounaise (identique à la landing page) ────────────────────
+const CM = {
+  ember: "#D4AF37",
+  gold: "#F0D060",
+  clay: "#8A6D1F",
+};
+const INK = "#080F1D";
+
+// ─── Bande de motifs compacte ───────────────────────────────────────────────
+// Version condensée du registre "cercles pointillés" de la bande cérémonielle
+// de la landing page — assez discrète pour border une barre de 64px.
+function DotStrip() {
+  const dots = Array.from({ length: 60 });
+  return (
+    <svg aria-hidden="true" viewBox="0 0 1200 10" preserveAspectRatio="none" className="w-full h-[5px] block">
+      {dots.map((_, i) => {
+        const x = 10 + i * 20;
+        const fill = i % 3 === 0 ? CM.gold : i % 3 === 1 ? CM.ember : CM.clay;
+        return (
+          <circle
+            key={i}
+            cx={x}
+            cy={5}
+            r={i % 5 === 0 ? 2.2 : 1.2}
+            fill={fill}
+            opacity={i % 5 === 0 ? 0.9 : 0.5}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
 type NotificationItem = {
   id: number | string;
   text: string;
@@ -417,18 +450,14 @@ export function Navbar() {
         className="fixed top-0 left-0 right-0 z-50 h-16"
         style={{
           background: scrolled
-            ? "rgba(8, 15, 28, 0.98)"
-            : "rgba(8, 15, 28, 0.94)",
+            ? "rgba(8, 15, 29, 0.98)"
+            : "rgba(8, 15, 29, 0.94)",
 
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
 
-          borderBottom: scrolled
-            ? "1px solid rgba(212,175,55,0.18)"
-            : "1px solid rgba(255,255,255,0.07)",
-
           boxShadow: scrolled
-            ? "0 8px 30px rgba(0,0,0,0.25)"
+            ? "0 8px 30px rgba(0,0,0,0.3)"
             : "none",
 
           transition:
@@ -446,32 +475,21 @@ export function Navbar() {
 
           <Link
             to={homePath}
-            className="flex items-center gap-2.5 flex-shrink-0"
+            className="flex items-center gap-2 flex-shrink-0"
           >
-            <motion.div
+            <motion.img
+              src="/assets/logo-freekaolo-badge.png"
+              alt="free-kaolo"
               whileHover={{
                 scale: 1.05,
                 rotate: 2,
               }}
-              className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg"
-              style={{
-                background:
-                  "linear-gradient(135deg,#D4AF37,#F0D060)",
-              }}
-            >
-              <span
-                className="text-xs font-black"
-                style={{
-                  color: "#0F172A",
-                }}
-              >
-                FK
-              </span>
-            </motion.div>
+              className="w-11 h-11 object-contain"
+            />
 
             <span className="hidden sm:block text-[15px] font-bold tracking-tight text-white">
               free
-              <span style={{ color: "#D4AF37" }}>
+              <span style={{ color: CM.ember }}>
                 -kaolo
               </span>
             </span>
@@ -502,7 +520,7 @@ export function Navbar() {
                         undefined,
                         item.children
                       )
-                        ? "#D4AF37"
+                        ? CM.ember
                         : "rgba(255,255,255,0.68)",
 
                       background: isActive(
@@ -532,7 +550,7 @@ export function Navbar() {
                     className="flex items-center px-3 py-2 rounded-xl text-[13px] font-medium transition-all"
                     style={{
                       color: isActive(item.path)
-                        ? "#D4AF37"
+                        ? CM.ember
                         : "rgba(255,255,255,0.68)",
 
                       background: isActive(item.path)
@@ -567,7 +585,7 @@ export function Navbar() {
                         className="absolute top-full left-0 mt-2 w-72 rounded-2xl overflow-hidden"
                         style={{
                           background:
-                            "rgba(8,15,28,0.99)",
+                            "rgba(8,15,29,0.99)",
                           border:
                             "1px solid rgba(255,255,255,0.09)",
                           boxShadow:
@@ -588,7 +606,7 @@ export function Navbar() {
                                     background:
                                       "rgba(212,175,55,0.08)",
                                     color:
-                                      "#D4AF37",
+                                      CM.ember,
                                   }}
                                 >
                                   {child.icon}
@@ -637,14 +655,14 @@ export function Navbar() {
               <ShieldCheck
                 size={13}
                 style={{
-                  color: "#D4AF37",
+                  color: CM.ember,
                 }}
               />
 
               <span
                 className="text-[11px] font-semibold"
                 style={{
-                  color: "#D4AF37",
+                  color: CM.ember,
                 }}
               >
                 {roleLabel}
@@ -705,7 +723,7 @@ export function Navbar() {
                     className="absolute top-full right-0 mt-2 w-[min(340px,calc(100vw-24px))] rounded-2xl overflow-hidden"
                     style={{
                       background:
-                        "rgba(8,15,28,0.99)",
+                        "rgba(8,15,29,0.99)",
                       border:
                         "1px solid rgba(255,255,255,0.09)",
                       boxShadow:
@@ -775,7 +793,7 @@ export function Navbar() {
                           to={notificationsPath}
                           className="text-xs font-medium"
                           style={{
-                            color: "#D4AF37",
+                            color: CM.ember,
                           }}
                         >
                           Voir toutes les notifications
@@ -811,8 +829,8 @@ export function Navbar() {
                   className="w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold"
                   style={{
                     background:
-                      "linear-gradient(135deg,#D4AF37,#F0D060)",
-                    color: "#0F172A",
+                      `linear-gradient(135deg,${CM.ember},${CM.gold})`,
+                    color: INK,
                   }}
                 >
                   {profileLoading
@@ -869,7 +887,7 @@ export function Navbar() {
                     className="absolute top-full right-0 mt-2 w-64 rounded-2xl overflow-hidden"
                     style={{
                       background:
-                        "rgba(8,15,28,0.99)",
+                        "rgba(8,15,29,0.99)",
                       border:
                         "1px solid rgba(255,255,255,0.09)",
                       boxShadow:
@@ -885,8 +903,8 @@ export function Navbar() {
                           className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold"
                           style={{
                             background:
-                              "linear-gradient(135deg,#D4AF37,#F0D060)",
-                            color: "#0F172A",
+                              `linear-gradient(135deg,${CM.ember},${CM.gold})`,
+                            color: INK,
                           }}
                         >
                           {initiales}
@@ -918,14 +936,14 @@ export function Navbar() {
                         <ShieldCheck
                           size={11}
                           style={{
-                            color: "#D4AF37",
+                            color: CM.ember,
                           }}
                         />
 
                         <span
                           className="text-[10px] font-semibold"
                           style={{
-                            color: "#D4AF37",
+                            color: CM.ember,
                           }}
                         >
                           {roleLabel}
@@ -991,6 +1009,11 @@ export function Navbar() {
 
           </div>
         </div>
+
+        {/* Bande de motifs — signature discrète en pied de barre */}
+        <div className="absolute bottom-0 left-0 right-0 pointer-events-none">
+          <DotStrip />
+        </div>
       </motion.nav>
 
       {/* ========================================================
@@ -1019,10 +1042,10 @@ export function Navbar() {
               backdropFilter: "blur(20px)",
               maxHeight:
                 "calc(100vh - 64px)",
-              borderBottom:
-                "1px solid rgba(255,255,255,0.08)",
             }}
           >
+            <DotStrip />
+
             <div className="p-4">
 
               {/* USER MOBILE */}
@@ -1034,8 +1057,8 @@ export function Navbar() {
                     className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs"
                     style={{
                       background:
-                        "linear-gradient(135deg,#D4AF37,#F0D060)",
-                      color: "#0F172A",
+                        `linear-gradient(135deg,${CM.ember},${CM.gold})`,
+                      color: INK,
                     }}
                   >
                     {initiales}

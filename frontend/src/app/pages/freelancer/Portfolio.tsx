@@ -11,7 +11,7 @@ import {
   portfolioService,
   type PortfolioItem,
   type PortfolioFormData,
-} from "../../../services/portfolioservice";
+} from "../../../services/portfolioService";
 
 const CATEGORIES = ["Tous", "Web App", "Mobile", "Fintech", "SaaS", "API"];
 
@@ -56,7 +56,7 @@ const inputStyle = {
 
 export function Portfolio() {
   const { user } = useAuth();
-  const freelancerId = user?.freelancerId;
+  const freelancerId = user?.userId;
 
   const [items,          setItems]          = useState<PortfolioItem[]>([]);
   const [loading,        setLoading]        = useState(true);
@@ -67,6 +67,7 @@ export function Portfolio() {
   const [saving,         setSaving]         = useState(false);
   const [deleteTarget,   setDeleteTarget]   = useState<PortfolioItem | null>(null);
   const [deleting,       setDeleting]       = useState(false);
+const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
 
   // Upload d'image
   const fileInputRef = useRef<HTMLInputElement>(null);

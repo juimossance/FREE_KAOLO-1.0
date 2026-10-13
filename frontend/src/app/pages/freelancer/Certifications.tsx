@@ -16,6 +16,7 @@ import {
   FileCheck2,
   ChevronRight,
   Loader2,
+  GraduationCap,
 } from "lucide-react";
 import { useAuth } from "../../../hooks/useAuth";
 import {
@@ -23,7 +24,10 @@ import {
   type CertificationItem,
   type CertificationFormData,
   type CertStatus,
+  type CertType,
 } from "../../../services/certificationservice";
+
+// ── Configuration ───────────────────────────────────────────────────────────
 
 const statusConfig: Record<
   CertStatus,
@@ -58,17 +62,85 @@ const statusConfig: Record<
   },
 };
 
+// Catégories (certifications uniquement)
 const categories = ["Toutes", "Cloud", "Frontend", "Backend", "DevOps", "Data", "Mobile"];
 
-const emptyForm: CertificationFormData = {
+// Niveaux (diplômes uniquement) — stockés dans le champ `categorie`
+const diplomaLevels = ["BTS / DUT", "Licence", "Master", "Ingénieur", "Doctorat", "Autre"];
+
+const typeCopy: Record<
+  CertType,
+  {
+    tab: string;
+    singular: string;
+    plural: string;
+    add: string;
+    modalResubmit: string;
+    nameLabel: string;
+    namePlaceholder: string;
+    orgLabel: string;
+    orgPlaceholder: string;
+    levelLabel: string;
+    idLabel: string;
+    idPlaceholder: string;
+    dateLabel: string;
+    verified: string;
+    emptyTitle: string;
+    emptyText: string;
+  }
+> = {
+  CERTIFICATION: {
+    tab: "Certifications",
+    singular: "certification",
+    plural: "certifications",
+    add: "Ajouter une certification",
+    modalResubmit: "Resoumettre la certification",
+    nameLabel: "Nom de la certification",
+    namePlaceholder: "Ex. AWS Certified Cloud Practitioner",
+    orgLabel: "Organisme",
+    orgPlaceholder: "Amazon Web Services",
+    levelLabel: "Catégorie",
+    idLabel: "Identifiant de l'accréditation",
+    idPlaceholder: "Identifiant unique du certificat",
+    dateLabel: "Date d'obtention",
+    verified: "Certifications vérifiées",
+    emptyTitle: "Aucune certification ajoutée",
+    emptyText: "Ajoutez vos certifications pour rassurer les entreprises sur vos compétences.",
+  },
+  DIPLOME: {
+    tab: "Diplômes",
+    singular: "diplôme",
+    plural: "diplômes",
+    add: "Ajouter un diplôme",
+    modalResubmit: "Resoumettre le diplôme",
+    nameLabel: "Intitulé du diplôme",
+    namePlaceholder: "Ex. Licence en Génie logiciel",
+    orgLabel: "Établissement",
+    orgPlaceholder: "Institut Africain d'Informatique",
+    levelLabel: "Niveau",
+    idLabel: "Numéro du diplôme (optionnel)",
+    idPlaceholder: "Numéro figurant sur le diplôme",
+    dateLabel: "Date d'obtention",
+    verified: "Diplômes vérifiés",
+    emptyTitle: "Aucun diplôme ajouté",
+    emptyText: "Ajoutez votre diplôme le plus élevé pour renforcer la crédibilité de votre profil.",
+  },
+};
+
+const typeOf = (item: CertificationItem): CertType => item.type ?? "CERTIFICATION";
+
+const defaultLevel = (type: CertType) => (type === "DIPLOME" ? diplomaLevels[1] : "Cloud");
+
+const makeEmptyForm = (type: CertType): CertificationFormData => ({
+  type,
   nom: "",
   organisme: "",
   credentialId: "",
-  categorie: "Cloud",
+  categorie: defaultLevel(type),
   dateObtention: "",
   dateExpiration: null,
   documentUrl: "",
-};
+});
 
 function formatMonthYear(isoDate: string | null): string {
   if (!isoDate) return "Sans expiration";
@@ -86,6 +158,8 @@ const inputStyle = {
   color: "var(--foreground)",
 };
 
+// ── Page ────────────────────────────────────────────────────────────────────
+
 export function Certifications() {
   const { user } = useAuth();
   const freelancerId = user?.freelancerId;
@@ -94,13 +168,14 @@ export function Certifications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [activeType, setActiveType] = useState<CertType>("CERTIFICATION");
   const [activeCategory, setActiveCategory] = useState("Toutes");
   const [showModal, setShowModal] = useState(false);
   const [resubmitTarget, setResubmitTarget] = useState<CertificationItem | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const [form, setForm] = useState<CertificationFormData>(emptyForm);
+  const [form, setForm] = useState<CertificationFormData>(makeEmptyForm("CERTIFICATION"));
 
   // Upload du document justificatif
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -132,20 +207,34 @@ export function Certifications() {
 
   // ── Filtrage & compteurs ─────────────────────────────────────────────────
 
-  const filtered = useMemo(() => {
-    if (activeCategory === "Toutes") return certs;
-    return certs.filter((cert) => cert.categorie === activeCategory);
-  }, [certs, activeCategory]);
+  const certificationCount = certs.filter((c) => typeOf(c) === "CERTIFICATION").length;
+  const diplomaCount = certs.filter((c) => typeOf(c) === "DIPLOME").length;
 
-  const validatedCount = certs.filter((c) => c.status === "VALIDEE").length;
-  const pendingCount = certs.filter((c) => c.status === "EN_ATTENTE").length;
-  const rejectedCount = certs.filter((c) => c.status === "REJETEE").length;
+  const ofType = useMemo(() => certs.filter((c) => typeOf(c) === activeType), [certs, activeType]);
+
+  const filtered = useMemo(() => {
+    if (activeType !== "CERTIFICATION" || activeCategory === "Toutes") return ofType;
+    return ofType.filter((cert) => cert.categorie === activeCategory);
+  }, [ofType, activeType, activeCategory]);
+
+  // Les compteurs suivent l'onglet actif
+  const validatedCount = ofType.filter((c) => c.status === "VALIDEE").length;
+  const pendingCount = ofType.filter((c) => c.status === "EN_ATTENTE").length;
+  const rejectedCount = ofType.filter((c) => c.status === "REJETEE").length;
+
+  const copy = typeCopy[activeType];
+  const formCopy = typeCopy[form.type];
+
+  const switchType = (type: CertType) => {
+    setActiveType(type);
+    setActiveCategory("Toutes");
+  };
 
   // ── Modal : ouverture ────────────────────────────────────────────────────
 
   const openAdd = () => {
     setResubmitTarget(null);
-    setForm(emptyForm);
+    setForm(makeEmptyForm(activeType));
     setFormError(null);
     setDocError(null);
     setShowModal(true);
@@ -154,6 +243,7 @@ export function Certifications() {
   const openResubmit = (cert: CertificationItem) => {
     setResubmitTarget(cert);
     setForm({
+      type: typeOf(cert),
       nom: cert.nom,
       organisme: cert.organisme,
       credentialId: cert.credentialId,
@@ -173,6 +263,16 @@ export function Certifications() {
     setResubmitTarget(null);
   };
 
+  // Changement de type dans la modale (uniquement à l'ajout)
+  const changeFormType = (type: CertType) => {
+    setForm((f) => ({
+      ...f,
+      type,
+      categorie: defaultLevel(type),
+      dateExpiration: type === "DIPLOME" ? null : f.dateExpiration,
+    }));
+  };
+
   // ── Upload du justificatif ───────────────────────────────────────────────
 
   const handleFile = async (file: File | undefined) => {
@@ -184,8 +284,8 @@ export function Certifications() {
       setDocError("Format non supporté. Utilise un PDF, JPG ou PNG.");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setDocError("Le fichier dépasse 5 Mo. Choisis un fichier plus léger.");
+    if (file.size > 10 * 1024 * 1024) {
+      setDocError("Le fichier dépasse 10 Mo. Choisis un fichier plus léger.");
       return;
     }
 
@@ -216,19 +316,30 @@ export function Certifications() {
     }
     if (!freelancerId) return;
 
+    // Un diplôme n'expire pas
+    const payload: CertificationFormData = {
+      ...form,
+      dateExpiration: form.type === "DIPLOME" ? null : form.dateExpiration,
+    };
+
     setSaving(true);
     setFormError(null);
     try {
       if (resubmitTarget) {
-        const updated = await certificationService.resubmit(resubmitTarget.id, form);
-        setCerts((prev) => prev.map((c) => (c.id === resubmitTarget.id ? updated : c)));
+        const updated = await certificationService.resubmit(resubmitTarget.id, payload);
+        const withType = { ...updated, type: updated.type ?? payload.type };
+        setCerts((prev) => prev.map((c) => (c.id === resubmitTarget.id ? withType : c)));
       } else {
-        const created = await certificationService.create(freelancerId, form);
-        setCerts((prev) => [created, ...prev]);
+        const created = await certificationService.create(freelancerId, payload);
+        const withType = { ...created, type: created.type ?? payload.type };
+        setCerts((prev) => [withType, ...prev]);
+        // On affiche l'onglet où l'élément vient d'être ajouté
+        setActiveType(payload.type);
+        setActiveCategory("Toutes");
       }
       closeModal();
     } catch (err) {
-      console.error("Erreur sauvegarde certification:", err);
+      console.error("Erreur sauvegarde:", err);
       setFormError("La soumission a échoué. Réessaie dans un instant.");
     } finally {
       setSaving(false);
@@ -266,10 +377,10 @@ export function Certifications() {
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: "var(--navy)" }}>
-              Certifications
+              Certifications & diplômes
             </h1>
             <p className="mt-1 text-sm leading-6 max-w-xl" style={{ color: "var(--muted-foreground)" }}>
-              Gérez vos certifications et permettez aux entreprises de vérifier facilement vos compétences.
+              Gérez vos certifications et vos diplômes, et permettez aux entreprises de vérifier facilement vos compétences.
             </p>
           </div>
 
@@ -279,7 +390,7 @@ export function Certifications() {
             style={{ background: "var(--navy)", color: "#FFFFFF" }}
           >
             <Plus size={17} />
-            Ajouter une certification
+            {copy.add}
           </button>
         </header>
 
@@ -303,10 +414,10 @@ export function Certifications() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold" style={{ color: "var(--navy)" }}>
-              Vos certifications renforcent votre profil
+              Vos certifications et diplômes renforcent votre profil
             </p>
             <p className="text-xs mt-0.5 leading-5" style={{ color: "var(--muted-foreground)" }}>
-              Les certifications validées sont identifiées comme vérifiées auprès des entreprises.
+              Les éléments validés sont identifiés comme vérifiés auprès des entreprises.
             </p>
           </div>
           <div className="hidden sm:flex items-center gap-1.5 text-xs font-semibold" style={{ color: "#047857" }}>
@@ -315,9 +426,38 @@ export function Certifications() {
           </div>
         </div>
 
+        {/* ONGLETS TYPE */}
+        <div className="grid grid-cols-2 gap-1 p-1 rounded-2xl sm:inline-grid sm:w-auto" style={{ background: "#E2E8F0" }}>
+          {(["CERTIFICATION", "DIPLOME"] as CertType[]).map((type) => {
+            const active = activeType === type;
+            const count = type === "CERTIFICATION" ? certificationCount : diplomaCount;
+            return (
+              <button
+                key={type}
+                onClick={() => switchType(type)}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                style={{
+                  background: active ? "#FFFFFF" : "transparent",
+                  color: active ? "var(--navy)" : "var(--muted-foreground)",
+                  boxShadow: active ? "0 1px 3px rgba(15, 23, 42, 0.1)" : "none",
+                }}
+              >
+                {type === "DIPLOME" ? <GraduationCap size={16} /> : <Award size={16} />}
+                {typeCopy[type].tab}
+                <span
+                  className="text-[11px] px-1.5 py-0.5 rounded-full"
+                  style={{ background: active ? "var(--secondary)" : "#F1F5F9" }}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* STATS */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          <StatCard icon={<CheckCircle2 size={18} />} label="Certifications vérifiées" value={validatedCount} bg="#ECFDF5" color="#047857" />
+          <StatCard icon={<CheckCircle2 size={18} />} label={copy.verified} value={validatedCount} bg="#ECFDF5" color="#047857" />
           <StatCard icon={<Clock3 size={18} />} label="En cours de vérification" value={pendingCount} bg="#FFFBEB" color="#A16207" />
           <StatCard icon={<AlertCircle size={18} />} label="À corriger" value={rejectedCount} bg="#FEF2F2" color="#B91C1C" />
         </div>
@@ -326,37 +466,41 @@ export function Certifications() {
         <section>
           <div className="flex items-center justify-between gap-4 mb-3">
             <div>
-              <h2 className="text-sm font-semibold" style={{ color: "var(--navy)" }}>Mes certifications</h2>
+              <h2 className="text-sm font-semibold" style={{ color: "var(--navy)" }}>
+                {activeType === "DIPLOME" ? "Mes diplômes" : "Mes certifications"}
+              </h2>
               <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>
-                {filtered.length} certification{filtered.length > 1 ? "s" : ""} affichée{filtered.length > 1 ? "s" : ""}
+                {filtered.length} {filtered.length > 1 ? copy.plural : copy.singular}
               </p>
             </div>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {categories.map((category) => {
-              const active = activeCategory === category;
-              return (
-                <button
-                  key={category}
-                  onClick={() => setActiveCategory(category)}
-                  className="flex-shrink-0 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition-all"
-                  style={{
-                    background: active ? "var(--navy)" : "#FFFFFF",
-                    color: active ? "#FFFFFF" : "var(--muted-foreground)",
-                    borderColor: active ? "var(--navy)" : "var(--border)",
-                  }}
-                >
-                  {category}
-                </button>
-              );
-            })}
-          </div>
+          {activeType === "CERTIFICATION" && (
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+              {categories.map((category) => {
+                const active = activeCategory === category;
+                return (
+                  <button
+                    key={category}
+                    onClick={() => setActiveCategory(category)}
+                    className="flex-shrink-0 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition-all"
+                    style={{
+                      background: active ? "var(--navy)" : "#FFFFFF",
+                      color: active ? "#FFFFFF" : "var(--muted-foreground)",
+                      borderColor: active ? "var(--navy)" : "var(--border)",
+                    }}
+                  >
+                    {category}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* LISTE */}
         <div className="space-y-3">
-          {filtered.length === 0 && <EmptyState />}
+          {filtered.length === 0 && <EmptyState type={activeType} hasItems={ofType.length > 0} />}
           {filtered.map((cert) => (
             <CertificationCard
               key={cert.id}
@@ -381,11 +525,11 @@ export function Certifications() {
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "var(--secondary)", color: "var(--gold)" }}>
-                  <Award size={18} />
+                  {form.type === "DIPLOME" ? <GraduationCap size={18} /> : <Award size={18} />}
                 </div>
                 <div>
                   <h3 className="font-bold" style={{ color: "var(--navy)" }}>
-                    {resubmitTarget ? "Resoumettre la certification" : "Ajouter une certification"}
+                    {resubmitTarget ? formCopy.modalResubmit : formCopy.add}
                   </h3>
                   <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>
                     Soumettez vos justificatifs pour vérification.
@@ -398,12 +542,37 @@ export function Certifications() {
             </div>
 
             <div className="p-5 sm:p-6 space-y-5">
+              {/* Choix du type (uniquement à l'ajout) */}
+              {!resubmitTarget && (
+                <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: "#F1F5F9" }}>
+                  {(["CERTIFICATION", "DIPLOME"] as CertType[]).map((type) => {
+                    const active = form.type === type;
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => changeFormType(type)}
+                        className="flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all"
+                        style={{
+                          background: active ? "#FFFFFF" : "transparent",
+                          color: active ? "var(--navy)" : "var(--muted-foreground)",
+                          boxShadow: active ? "0 1px 2px rgba(15, 23, 42, 0.08)" : "none",
+                        }}
+                      >
+                        {type === "DIPLOME" ? <GraduationCap size={14} /> : <Award size={14} />}
+                        {typeCopy[type].singular.charAt(0).toUpperCase() + typeCopy[type].singular.slice(1)}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
               <div>
-                <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--navy)" }}>Nom de la certification</label>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--navy)" }}>{formCopy.nameLabel}</label>
                 <input
                   className={inputClass}
                   style={inputStyle}
-                  placeholder="Ex. AWS Certified Cloud Practitioner"
+                  placeholder={formCopy.namePlaceholder}
                   value={form.nom}
                   onChange={(e) => setForm((f) => ({ ...f, nom: e.target.value }))}
                 />
@@ -411,13 +580,13 @@ export function Certifications() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--navy)" }}>Organisme</label>
+                  <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--navy)" }}>{formCopy.orgLabel}</label>
                   <div className="relative">
                     <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       className={`${inputClass} pl-10`}
                       style={inputStyle}
-                      placeholder="Amazon Web Services"
+                      placeholder={formCopy.orgPlaceholder}
                       value={form.organisme}
                       onChange={(e) => setForm((f) => ({ ...f, organisme: e.target.value }))}
                     />
@@ -425,28 +594,28 @@ export function Certifications() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--navy)" }}>Catégorie</label>
+                  <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--navy)" }}>{formCopy.levelLabel}</label>
                   <select
                     className={inputClass}
                     style={inputStyle}
                     value={form.categorie}
                     onChange={(e) => setForm((f) => ({ ...f, categorie: e.target.value }))}
                   >
-                    {categories.filter((c) => c !== "Toutes").map((category) => (
-                      <option key={category}>{category}</option>
+                    {(form.type === "DIPLOME" ? diplomaLevels : categories.filter((c) => c !== "Toutes")).map((option) => (
+                      <option key={option}>{option}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--navy)" }}>Identifiant de l'accréditation</label>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--navy)" }}>{formCopy.idLabel}</label>
                 <div className="relative">
                   <Fingerprint size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     className={`${inputClass} pl-10`}
                     style={inputStyle}
-                    placeholder="Identifiant unique du certificat"
+                    placeholder={formCopy.idPlaceholder}
                     value={form.credentialId}
                     onChange={(e) => setForm((f) => ({ ...f, credentialId: e.target.value }))}
                   />
@@ -455,7 +624,7 @@ export function Certifications() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--navy)" }}>Date d'obtention</label>
+                  <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--navy)" }}>{formCopy.dateLabel}</label>
                   <div className="relative">
                     <CalendarDays size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
@@ -468,19 +637,22 @@ export function Certifications() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--navy)" }}>Date d'expiration</label>
-                  <div className="relative">
-                    <CalendarDays size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                    <input
-                      type="date"
-                      className={`${inputClass} pl-10`}
-                      style={inputStyle}
-                      value={form.dateExpiration ?? ""}
-                      onChange={(e) => setForm((f) => ({ ...f, dateExpiration: e.target.value || null }))}
-                    />
+                {/* Un diplôme n'a pas de date d'expiration */}
+                {form.type === "CERTIFICATION" && (
+                  <div>
+                    <label className="block text-sm font-semibold mb-1.5" style={{ color: "var(--navy)" }}>Date d'expiration</label>
+                    <div className="relative">
+                      <CalendarDays size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      <input
+                        type="date"
+                        className={`${inputClass} pl-10`}
+                        style={inputStyle}
+                        value={form.dateExpiration ?? ""}
+                        onChange={(e) => setForm((f) => ({ ...f, dateExpiration: e.target.value || null }))}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Upload du justificatif */}
@@ -530,7 +702,7 @@ export function Certifications() {
                           <Upload size={21} />
                         </div>
                         <p className="text-sm font-semibold" style={{ color: "var(--navy)" }}>Importer le justificatif</p>
-                        <p className="text-xs mt-1" style={{ color: "var(--muted-foreground)" }}>PDF, JPG ou PNG · 5 Mo maximum</p>
+                        <p className="text-xs mt-1" style={{ color: "var(--muted-foreground)" }}>PDF, JPG ou PNG · 10 Mo maximum</p>
                       </>
                     )}
                   </div>
@@ -548,7 +720,7 @@ export function Certifications() {
               <div className="flex gap-3 p-4 rounded-2xl border" style={{ background: "#F8FAFC", borderColor: "var(--border)" }}>
                 <ShieldCheck size={18} className="flex-shrink-0 mt-0.5 text-emerald-600" />
                 <p className="text-xs leading-5" style={{ color: "var(--muted-foreground)" }}>
-                  Votre document sera utilisé uniquement pour vérifier l'authenticité de votre certification. Après soumission,
+                  Votre document sera utilisé uniquement pour vérifier l'authenticité de votre {formCopy.singular}. Après soumission,
                   son statut passera à{" "}
                   <strong style={{ color: "var(--navy)" }}>En vérification</strong>.
                 </p>
@@ -610,7 +782,7 @@ function StatCard({ icon, label, value, bg, color }: { icon: React.ReactNode; la
   );
 }
 
-/* ── CERTIFICATION CARD ──────────────────────────────────────────────── */
+/* ── CERTIFICATION / DIPLÔME CARD ────────────────────────────────────── */
 
 function CertificationCard({
   cert,
@@ -621,11 +793,14 @@ function CertificationCard({
   status: { icon: React.ReactNode; bg: string; color: string; border: string; label: string };
   onResubmit: () => void;
 }) {
+  const isDiploma = typeOf(cert) === "DIPLOME";
+  const copy = typeCopy[typeOf(cert)];
+
   return (
     <article className="group bg-white rounded-2xl border p-4 sm:p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg" style={{ borderColor: "var(--border)" }}>
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "var(--secondary)", color: "var(--gold)" }}>
-          <Award size={22} />
+          {isDiploma ? <GraduationCap size={22} /> : <Award size={22} />}
         </div>
 
         <div className="flex-1 min-w-0">
@@ -635,7 +810,7 @@ function CertificationCard({
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="font-semibold text-sm sm:text-base" style={{ color: "var(--navy)" }}>{cert.nom}</h3>
                   {cert.status === "VALIDEE" && (
-                    <span title="Certification vérifiée" aria-label="Certification vérifiée">
+                    <span title={`${copy.singular.charAt(0).toUpperCase() + copy.singular.slice(1)} vérifié(e)`} aria-label="Vérifié">
                       <ShieldCheck size={15} className="text-emerald-600" />
                     </span>
                   )}
@@ -656,10 +831,18 @@ function CertificationCard({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <MetaItem icon={<CalendarDays size={13} />} label="Obtenue" value={formatMonthYear(cert.dateObtention)} />
-              <MetaItem icon={<CalendarDays size={13} />} label="Expiration" value={formatMonthYear(cert.dateExpiration)} />
-              <MetaItem icon={<Fingerprint size={13} />} label="Identifiant" value={cert.credentialId} mono />
-              <MetaItem icon={<Award size={13} />} label="Catégorie" value={cert.categorie} />
+              <MetaItem icon={<CalendarDays size={13} />} label="Obtenu" value={formatMonthYear(cert.dateObtention)} />
+              {!isDiploma && (
+                <MetaItem icon={<CalendarDays size={13} />} label="Expiration" value={formatMonthYear(cert.dateExpiration)} />
+              )}
+              {cert.credentialId && (
+                <MetaItem icon={<Fingerprint size={13} />} label="Identifiant" value={cert.credentialId} mono />
+              )}
+              <MetaItem
+                icon={isDiploma ? <GraduationCap size={13} /> : <Award size={13} />}
+                label={copy.levelLabel}
+                value={cert.categorie}
+              />
             </div>
 
             {cert.status === "REJETEE" && (
@@ -680,7 +863,7 @@ function CertificationCard({
                 <div>
                   <p className="text-xs font-semibold">Vérification en cours</p>
                   <p className="text-xs mt-0.5 leading-5">
-                    Notre équipe vérifie actuellement cette certification. Le délai indicatif est de 24 à 48 heures ouvrées.
+                    Notre équipe vérifie actuellement ce document. Le délai indicatif est de 24 à 48 heures ouvrées.
                   </p>
                 </div>
               </div>
@@ -742,14 +925,19 @@ function MetaItem({ icon, label, value, mono = false }: { icon: React.ReactNode;
 
 /* ── EMPTY STATE ─────────────────────────────────────────────────────── */
 
-function EmptyState() {
+function EmptyState({ type, hasItems }: { type: CertType; hasItems: boolean }) {
+  const copy = typeCopy[type];
   return (
     <div className="bg-white border rounded-2xl p-10 text-center" style={{ borderColor: "var(--border)" }}>
       <div className="w-12 h-12 mx-auto rounded-2xl flex items-center justify-center" style={{ background: "var(--secondary)", color: "var(--gold)" }}>
-        <Award size={22} />
+        {type === "DIPLOME" ? <GraduationCap size={22} /> : <Award size={22} />}
       </div>
-      <h3 className="mt-4 font-semibold" style={{ color: "var(--navy)" }}>Aucune certification trouvée</h3>
-      <p className="text-sm mt-1" style={{ color: "var(--muted-foreground)" }}>Aucune certification ne correspond à ce filtre.</p>
+      <h3 className="mt-4 font-semibold" style={{ color: "var(--navy)" }}>
+        {hasItems ? "Aucun résultat" : copy.emptyTitle}
+      </h3>
+      <p className="text-sm mt-1" style={{ color: "var(--muted-foreground)" }}>
+        {hasItems ? "Aucun résultat ne correspond à ce filtre." : copy.emptyText}
+      </p>
     </div>
   );
 }

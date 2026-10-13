@@ -17,6 +17,7 @@ export interface CandidatureFreelancer {
 export const candidatureFreelancerService = {
   getAll: (freelancerId: number): Promise<CandidatureFreelancer[]> =>
     apiFetch(`/freelancer/candidatures/${freelancerId}`),
+  
 
   retirer: (candidatureId: number): Promise<void> =>
     apiFetch(`/freelancer/candidatures/${candidatureId}`, { method: "DELETE" }),

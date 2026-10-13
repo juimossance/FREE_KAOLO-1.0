@@ -26,6 +26,8 @@ export function LoginPage() {
         navigate("/freelancer/dashboard");
       } else if (user.role === "ENTREPRISE") {
         navigate("/enterprise/dashboard");
+      }else if (user.role === "ADMIN") {
+        navigate("/admin/dashboard");
       } else {
         navigate("/");
       }

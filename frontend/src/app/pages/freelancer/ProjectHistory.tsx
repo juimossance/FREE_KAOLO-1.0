@@ -18,7 +18,7 @@ import {
   projectHistoryService,
   type ProjectHistory,
   type ProjectHistoryStats,
-} from "../../../services/ProjectHistoryService";
+} from "../../../services/projectHistoryService";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

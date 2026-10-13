@@ -5,6 +5,7 @@ import com.example.demo.Dto.freelancerDto;
 
 import com.example.demo.entity.Freelancer;
 import com.example.demo.entity.User;
+import com.example.demo.repository.CertificationRepository;
 import com.example.demo.repository.freelancerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +21,7 @@ public class Freelancerservice {
     private freelancerRepository repository;
     @Autowired
     private PasswordEncoder passwordEncoder;
+
 
     public Freelancer create(freelancerDto dto) {
         User u= new User();
@@ -74,11 +76,17 @@ p.setPrenom(dto.getPrenom());
 
     public Freelancer update(Long id, freelancerDto dto) {
         Freelancer p = getById(id);
-        User u= new User();
+        User u= p.getUser();
+        if (u == null) {
+            throw new RuntimeException("Utilisateur associé au freelancer introuvable");
+        }
+
         u.setEmail(dto.getEmail());
         u.setRole(dto.getRole());
         u.setPhone(dto.getPhone());
-        u.setPassword(passwordEncoder.encode(dto.getPassword()));
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            u.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
         p.setNom(dto.getNom());
         p.setPrenom(dto.getPrenom());
         p.setPays(dto.getPays());
@@ -91,7 +99,6 @@ p.setPrenom(dto.getPrenom());
         return repository.save(p);
     }
     public Freelancer getByUserId(Long userId) {
-
         return repository.findByUserId(userId).orElse(null);
     }
 }

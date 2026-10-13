@@ -2,6 +2,8 @@ package com.example.demo.entity;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -23,6 +25,8 @@ public class Freelancer {
     @JoinColumn(name = "user_id") // clé étrangère
     private User user;
 
+
+
     // profil
     private String description;
     private Double tarifJournalier;
@@ -43,25 +47,21 @@ public class Freelancer {
     private int nombreAvis = 0;
 
     @Column(nullable = false)
-    private int vues = 0;
+private int vues = 0;
 
-    // Source de vérité unique pour les compétences : statut vérifié/déclaré,
-    // lien vers les tentatives de quiz. Remplace l'ancienne List<String> competence.
-    @OneToMany(mappedBy = "freelance", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Competence> competence;
 
-    // Texte généré automatiquement (specialite + noms des competences + description)
-    // utilisé par le moteur de matching TF-IDF. Ne pas saisir manuellement,
-    // le régénérer via un service à chaque modification de profil/compétence.
+
+    private List<String> competence = new ArrayList<>();
+    @Transient
+    private boolean certifie;
+
+    public boolean isCertifie() { return certifie; }
+    public void setCertifie(boolean certifie) { this.certifie = certifie; }
+
     @Column(length = 2000)
     private String bioEtCompetences;
 
-    @OneToMany(mappedBy = "freelance", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TentativeQuiz> tentativesQuiz;
-
-    // Pourcentage de complétude du profil, de 0 à 100 (converti en 0.0-1.0
-    // uniquement au moment du calcul du score composite dans MatchingEngine)
-    @Column(nullable = false)
+    @Column(nullable = false,name = "completude_profil")
     private int completudeProfil = 0;
 
     public Freelancer() {
@@ -72,7 +72,11 @@ public class Freelancer {
         this.completudeProfil = 0;
     }
 
+
     // --- Getters / Setters ---
+
+
+
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -134,15 +138,15 @@ public class Freelancer {
     public int getVues() { return vues; }
     public void setVues(int vues) { this.vues = vues; }
 
-    public List<Competence> getCompetence() { return competence; }
-    public void setCompetence(List<Competence> competence) { this.competence = competence; }
+    public List<String> getCompetence() { return competence; }
+    public void setCompetence(List<String> competence) { this.competence = competence; }
 
     public String getBioEtCompetences() { return bioEtCompetences; }
     public void setBioEtCompetences(String bioEtCompetences) { this.bioEtCompetences = bioEtCompetences; }
 
-    public List<TentativeQuiz> getTentativesQuiz() { return tentativesQuiz; }
-    public void setTentativesQuiz(List<TentativeQuiz> tentativesQuiz) { this.tentativesQuiz = tentativesQuiz; }
 
     public int getCompletudeProfil() { return completudeProfil; }
     public void setCompletudeProfil(int completudeProfil) { this.completudeProfil = completudeProfil; }
+
+
 }

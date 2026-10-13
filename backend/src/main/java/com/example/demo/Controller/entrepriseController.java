@@ -102,6 +102,7 @@ public class entrepriseController {
             Map<String, Object> map = new HashMap<>();
             map.put("id",               c.getId());
             map.put("candidatureId",    c.getId());
+            map.put("projetId",         c.getProjet().getId());
             map.put("projetTitre",      c.getProjet().getTitre());
             map.put("projetCategorie",  c.getProjet().getCategorie());
             map.put("freelancerNom",    c.getFreelancer().getNom());
@@ -111,6 +112,7 @@ public class entrepriseController {
             map.put("montant",          c.getMontantFinal() != null
                     ? c.getMontantFinal()
                     : c.getProjet().getBudget());
+
             map.put("note",             c.getNote());
             map.put("commentaire",      c.getCommentaireEntreprise());
             map.put("status",           c.getStatus().name());

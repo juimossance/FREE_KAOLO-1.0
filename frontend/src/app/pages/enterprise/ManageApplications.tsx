@@ -139,7 +139,7 @@ export function ManageApplications() {
 const handleContact = async (freelancerId: number) => {
   setContactingId(freelancerId);
   try {
-    const conversation = await apiFetch<{ id: number }>("/api/conversations/start", {
+    const conversation = await apiFetch<{ id: number }>("/conversations/start", {
       method: "POST",
       body: JSON.stringify({ targetUserId: freelancerId }),
     });
@@ -1031,6 +1031,7 @@ const handleStatusChange = async (
     <MessageSquare size={15} style={{ color: "var(--navy)" }} />
   )}
 </button>
+
 
                         {app.status !== "ACCEPTEE" &&
                           app.status !== "REJETEE" && (

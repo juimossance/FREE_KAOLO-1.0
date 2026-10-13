@@ -1,423 +1,383 @@
-import { useState, useRef } from "react";
-import { Bot, Send, Loader2, Star, Users, FileText, BarChart2, Sparkles, RefreshCw, Copy, ThumbsUp, ThumbsDown, Briefcase, TrendingUp } from "lucide-react";
-import { sendMessage as sendMessageApi } from "../../../services/sendMessage";
+import { useState, useRef, useEffect } from "react";
+import {
+  Send,
+  Sparkles,
+  ShieldCheck,
+  Star,
+  MapPin,
+  Clock,
+  CheckCircle2,
+  ArrowRight,
+  Search,
+  Briefcase,
+  Info,
+} from "lucide-react";
 
-type AITab = "assistant" | "recommendations" | "reports" | "analysis";
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-const suggestedQuestions = [
-  "Analyse mon profil et suggère des améliorations",
-  "Quels projets correspondent à mon profil ?",
-  "Rédige une lettre de motivation pour un projet React",
-  "Comment augmenter ma note sur la plateforme ?",
-  "Génère un résumé de mes candidatures ce mois",
+interface Freelancer {
+  id: number;
+  name: string;
+  avatar: string;
+  specialite: string;
+  skills: string[];
+  rating: number;
+  reviews: number;
+  verified: boolean;
+  disponibilite: "Disponible" | "Partiellement disponible" | "Indisponible";
+  tarifJournalier: number;
+  ville: string;
+  completedProjects: number;
+  responseTime: string;
+}
+
+type ChatMessage =
+  | { id: number; from: "user"; text: string }
+  | { id: number; from: "assistant"; text: string; results?: { freelancer: Freelancer; matchedSkills: string[] }[] };
+
+// ── Données ───────────────────────────────────────────────────────────────────
+
+const freelancers: Freelancer[] = [
+  { id: 1, name: "Kofi Mensah", avatar: "KM", specialite: "Développeur Full-Stack", skills: ["React", "Node.js", "TypeScript", "PostgreSQL"], rating: 4.9, reviews: 27, verified: true, disponibilite: "Disponible", tarifJournalier: 85000, ville: "Abidjan", completedProjects: 34, responseTime: "< 2h" },
+  { id: 2, name: "Awa Diallo", avatar: "AD", specialite: "Designer UI/UX", skills: ["Figma", "Design System", "Adobe XD", "Prototypage"], rating: 4.8, reviews: 19, verified: true, disponibilite: "Disponible", tarifJournalier: 65000, ville: "Dakar", completedProjects: 22, responseTime: "< 3h" },
+  { id: 3, name: "Jean-Marc Kouassi", avatar: "JK", specialite: "Développeur Mobile", skills: ["React Native", "Kotlin", "Swift", "Firebase"], rating: 4.7, reviews: 15, verified: true, disponibilite: "Partiellement disponible", tarifJournalier: 90000, ville: "Abidjan", completedProjects: 18, responseTime: "< 5h" },
+  { id: 4, name: "Fatou Ndiaye", avatar: "FN", specialite: "Data Analyst", skills: ["Python", "SQL", "Power BI", "Machine Learning"], rating: 4.9, reviews: 31, verified: true, disponibilite: "Disponible", tarifJournalier: 95000, ville: "Dakar", completedProjects: 29, responseTime: "< 1h" },
+  { id: 5, name: "Yao N'Guessan", avatar: "YN", specialite: "Développeur Backend", skills: ["Java", "Spring Boot", "Docker", "AWS"], rating: 4.6, reviews: 12, verified: false, disponibilite: "Disponible", tarifJournalier: 80000, ville: "Bouaké", completedProjects: 9, responseTime: "< 6h" },
+  { id: 6, name: "Aïcha Traoré", avatar: "AT", specialite: "Développeuse Frontend", skills: ["React", "Vue.js", "TypeScript", "Tailwind CSS"], rating: 5.0, reviews: 8, verified: true, disponibilite: "Disponible", tarifJournalier: 70000, ville: "Abidjan", completedProjects: 11, responseTime: "< 2h" },
+  { id: 7, name: "Moussa Koné", avatar: "MK", specialite: "Chef de projet digital", skills: ["Agile", "Scrum", "Jira", "Gestion d'équipe"], rating: 4.8, reviews: 23, verified: true, disponibilite: "Indisponible", tarifJournalier: 100000, ville: "Abidjan", completedProjects: 26, responseTime: "< 4h" },
+  { id: 8, name: "Grace Osei", avatar: "GO", specialite: "Développeuse Full-Stack", skills: ["Django", "Python", "React", "PostgreSQL"], rating: 4.7, reviews: 16, verified: true, disponibilite: "Disponible", tarifJournalier: 75000, ville: "Accra", completedProjects: 20, responseTime: "< 3h" },
 ];
 
-const recommendedProfiles = [
-  { name: "Kofi Mensah", specialty: "Full Stack React", score: 98, rating: 4.9, price: "60k/j", tags: ["React", "Node.js"], reason: "Correspond à 100% des compétences requises et a livré 5 projets similaires" },
-  { name: "Jean-Marc Konan", specialty: "Frontend Vue.js", score: 92, rating: 4.8, price: "65k/j", tags: ["Vue.js", "React"], reason: "Expérience confirmée sur des projets de même envergure, délais respectés" },
-  { name: "Ama Nkrumah", specialty: "Backend Node.js", score: 89, rating: 4.7, price: "55k/j", tags: ["Node.js", "Express"], reason: "Spécialisée backend avec expertise API REST et PostgreSQL" },
+const suggestedPrompts = [
+  "Développeur React pour une application e-commerce, 3 semaines",
+  "Designer UI/UX pour refondre notre application mobile",
+  "Data analyst pour un tableau de bord de ventes",
 ];
 
-type Message = { role: "user" | "assistant"; content: string; loading?: boolean };
+// ── Logique de correspondance (transparente : mots-clés vs compétences) ───────
 
-export function AIPage() {
-  const [tab, setTab] = useState<AITab>("assistant");
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Bonjour ! Je suis votre assistant IA free-kaolo. Je peux vous aider à optimiser votre profil, analyser vos candidatures, recommander des projets, rédiger des lettres de motivation et bien plus encore. Comment puis-je vous aider ?" },
-  ]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [reportType, setReportType] = useState("performance");
-  const [generatingReport, setGeneratingReport] = useState(false);
-  const [reportReady, setReportReady] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+function matchFreelancers(query: string) {
+  const words = query
+    .toLowerCase()
+    .split(/[^a-zàâäéèêëïîôöùûüç0-9+.]+/)
+    .filter((w) => w.length > 2);
 
-  const handleSendMessage = async (text?: string) => {
-    const msg = text || input;
-    if (!msg.trim() || loading) return;
-    setInput("");
-    setMessages(prev => [...prev, { role: "user", content: msg }]);
-    setLoading(true);
+  const scored = freelancers.map((f) => {
+    const haystack = [f.specialite, ...f.skills].map((s) => s.toLowerCase());
+    const matchedSkills = f.skills.filter((skill) =>
+      words.some((w) => skill.toLowerCase().includes(w) || w.includes(skill.toLowerCase()))
+    );
+    const specialiteMatch = words.some((w) => f.specialite.toLowerCase().includes(w));
+    const score = matchedSkills.length * 2 + (specialiteMatch ? 1 : 0);
+    return { freelancer: f, matchedSkills, score };
+  });
 
-    try {
-      const responses = await sendMessageApi(msg);
-      const answer = responses?.answer ?? "Désolé, aucune réponse de l'IA.";
-      setMessages(prev => [
-        ...prev,
-        {
-          role: "assistant",
-          content: answer,
-        },
-      ]);
-    } catch (err) {
-      setMessages(prev => [
-        ...prev,
-        { role: "assistant", content: "Erreur lors de la requête IA." },
-      ]);
-    } finally {
-      setLoading(false);
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-    }
-  };
+  const relevant = scored.filter((s) => s.score > 0).sort((a, b) => b.score - a.score);
+  if (relevant.length > 0) return { results: relevant.slice(0, 4), fallback: false };
 
-  const generateReport = async () => {
-    setGeneratingReport(true);
-    setReportReady(false);
-    await new Promise(r => setTimeout(r, 2000));
-    setGeneratingReport(false);
-    setReportReady(true);
-  };
+  // Repli transparent : pas de correspondance directe, on le dit et on montre les mieux notés
+  const topRated = [...freelancers].sort((a, b) => b.rating - a.rating).slice(0, 3).map((f) => ({ freelancer: f, matchedSkills: [] }));
+  return { results: topRated, fallback: true };
+}
 
-  const tabs: { key: AITab; label: string; icon: React.ReactNode }[] = [
-    { key: "assistant", label: "Assistant IA", icon: <Bot size={16} /> },
-    { key: "recommendations", label: "Recommandations", icon: <Users size={16} /> },
-    { key: "reports", label: "Rapports", icon: <FileText size={16} /> },
-    { key: "analysis", label: "Analyse", icon: <BarChart2 size={16} /> },
-  ];
+// ── Sous-composants ──────────────────────────────────────────────────────────
 
+function StarRating({ rating }: { rating: number }) {
   return (
-    <div className="h-full flex flex-col">
-      {/* Tab bar */}
-      <div className="flex gap-1 px-6 pt-4 border-b bg-white" style={{ borderColor: "var(--border)" }}>
-        {tabs.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-sm font-medium border-b-2 transition-all"
-            style={{
-              borderColor: tab === t.key ? "var(--navy)" : "transparent",
-              color: tab === t.key ? "var(--navy)" : "var(--muted-foreground)",
-              background: tab === t.key ? "var(--secondary)" : "transparent",
-            }}>
-            {t.icon} {t.label}
-          </button>
-        ))}
+    <div className="flex items-center gap-1">
+      <Star size={13} fill="var(--gold)" style={{ color: "var(--gold)" }} />
+      <span className="text-xs font-semibold" style={{ color: "var(--navy)" }}>
+        {rating.toFixed(1)}
+      </span>
+    </div>
+  );
+}
+
+function availabilityColor(status: Freelancer["disponibilite"]) {
+  if (status === "Disponible") return "var(--success)";
+  if (status === "Partiellement disponible") return "#D97706";
+  return "var(--destructive)";
+}
+
+function FreelancerCard({
+  freelancer,
+  matchedSkills,
+  onViewProfile,
+}: {
+  freelancer: Freelancer;
+  matchedSkills: string[];
+  onViewProfile?: (id: number) => void;
+}) {
+  const f = freelancer;
+  return (
+    <div className="rounded-2xl border bg-white p-5 flex flex-col gap-3" style={{ borderColor: "var(--border)" }}>
+      <div className="flex items-start gap-3">
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
+          style={{ background: "var(--secondary)", color: "var(--navy)" }}
+        >
+          {f.avatar}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="text-sm font-semibold truncate" style={{ color: "var(--navy)" }}>
+              {f.name}
+            </p>
+            {f.verified && (
+              <span title="Profil vérifié">
+                <ShieldCheck size={14} style={{ color: "var(--success)" }} />
+              </span>
+            )}
+          </div>
+          <p className="text-xs truncate" style={{ color: "var(--muted-foreground)" }}>
+            {f.specialite}
+          </p>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {tab === "assistant" && (
-          <div className="h-full flex flex-col max-w-3xl mx-auto">
-            {/* Messages */}
-            <div className="flex-1 p-6 space-y-5 overflow-y-auto">
-              {/* AI Badge */}
-              <div className="flex items-center gap-3 justify-center py-2">
-                <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
-                  style={{ background: "var(--secondary)", color: "var(--muted-foreground)" }}>
-                  <Sparkles size={12} style={{ color: "var(--gold)" }} />
-                  Alimenté par IA free-kaolo
+      <div className="flex items-center gap-3 flex-wrap text-xs" style={{ color: "var(--muted-foreground)" }}>
+        <StarRating rating={f.rating} />
+        <span>({f.reviews} avis)</span>
+        <span className="flex items-center gap-1">
+          <MapPin size={11} /> {f.ville}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-2 text-xs">
+        <span className="w-1.5 h-1.5 rounded-full" style={{ background: availabilityColor(f.disponibilite) }} />
+        <span style={{ color: "var(--foreground)" }}>{f.disponibilite}</span>
+        <span className="w-1 h-1 rounded-full" style={{ background: "var(--border)" }} />
+        <span className="flex items-center gap-1" style={{ color: "var(--muted-foreground)" }}>
+          <Clock size={11} /> Répond {f.responseTime}
+        </span>
+      </div>
+
+      {/* Compétences — celles qui correspondent à la demande sont mises en avant */}
+      <div className="flex flex-wrap gap-1.5">
+        {f.skills.map((skill) => {
+          const matched = matchedSkills.includes(skill);
+          return (
+            <span
+              key={skill}
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium"
+              style={{
+                background: matched ? "var(--navy)" : "var(--secondary)",
+                color: matched ? "#FFF" : "var(--muted-foreground)",
+              }}
+            >
+              {matched && <CheckCircle2 size={10} />}
+              {skill}
+            </span>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center justify-between pt-2 mt-1 border-t" style={{ borderColor: "var(--border)" }}>
+        <div>
+          <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+            Tarif journalier
+          </p>
+          <p className="text-sm font-bold tabular-nums" style={{ color: "var(--navy)" }}>
+            {f.tarifJournalier.toLocaleString()} FCFA
+          </p>
+        </div>
+        <button
+          onClick={() => onViewProfile?.(f.id)}
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wide transition-opacity hover:opacity-90"
+          style={{ background: "var(--navy)", color: "#FFF" }}
+        >
+          Voir le profil <ArrowRight size={13} />
+        </button>
+      </div>
+
+      <p className="flex items-center gap-1.5 text-[11px]" style={{ color: "var(--muted-foreground)" }}>
+        <Briefcase size={11} /> {f.completedProjects} projets réalisés sur free-kaolo
+      </p>
+    </div>
+  );
+}
+
+function SearchingBubble() {
+  return (
+    <div className="flex items-start gap-2.5">
+      <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "var(--navy)" }}>
+        <Sparkles size={14} className="text-white" />
+      </div>
+      <div
+        className="px-4 py-3 rounded-2xl flex items-center gap-2 text-sm"
+        style={{ background: "var(--card)", borderBottomLeftRadius: 4, boxShadow: "0 1px 2px rgba(0,0,0,0.05)", color: "var(--muted-foreground)" }}
+      >
+        <Search size={14} className="animate-pulse" />
+        Recherche des profils correspondants...
+      </div>
+    </div>
+  );
+}
+
+// ── Composant principal ──────────────────────────────────────────────────────
+
+export function AIPage({ onViewProfile }: { onViewProfile?: (id: number) => void }) {
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: 1,
+      from: "assistant",
+      text: "Bonjour ! Décrivez le profil que vous recherchez (compétences, type de mission, durée) et je vous propose les freelances les plus pertinents sur free-kaolo.",
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const [searching, setSearching] = useState(false);
+  const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, searching]);
+
+  const submit = (text: string) => {
+    const query = text.trim();
+    if (!query || searching) return;
+
+    setMessages((prev) => [...prev, { id: Date.now(), from: "user", text: query }]);
+    setInput("");
+    setSearching(true);
+
+    setTimeout(() => {
+      const { results, fallback } = matchFreelancers(query);
+      setSearching(false);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          from: "assistant",
+          text: fallback
+            ? "Je n'ai pas trouvé de correspondance exacte avec ces compétences. Voici nos profils les mieux notés en attendant — vous pouvez aussi préciser votre besoin."
+            : `J'ai trouvé ${results.length} profil${results.length > 1 ? "s" : ""} qui correspond${results.length > 1 ? "ent" : ""} à votre demande, classés par pertinence :`,
+          results,
+        },
+      ]);
+    }, 1100);
+  };
+
+  const hasConversationStarted = messages.length > 1;
+
+  return (
+    <div className="flex flex-col h-full min-h-0 max-w-4xl mx-auto w-full">
+      {/* Header */}
+      <div className="px-4 md:px-0 pt-6 pb-4 shrink-0">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="flex items-center justify-center w-8 h-8 rounded-xl" style={{ background: "var(--navy)" }}>
+            <Sparkles size={15} className="text-white" />
+          </span>
+          <h2 className="text-xl font-bold" style={{ color: "var(--navy)" }}>
+            Trouver un freelance
+          </h2>
+        </div>
+        <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+          Assistant automatisé de mise en relation — les suggestions se basent sur les compétences déclarées des profils
+        </p>
+        <div className="flex flex-wrap gap-x-5 gap-y-1.5 mt-3">
+          {[
+            { icon: ShieldCheck, text: "Profils vérifiés manuellement" },
+            { icon: Star, text: "Avis certifiés après mission" },
+            { icon: Info, text: "Correspondance basée sur les compétences, pas une note opaque" },
+          ].map((it) => (
+            <span key={it.text} className="flex items-center gap-1.5 text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>
+              <it.icon size={12} style={{ color: "var(--success)" }} />
+              {it.text}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Zone de conversation — seule cette zone défile */}
+      <div className="flex-1 overflow-y-auto min-h-0 overscroll-contain px-4 md:px-0 space-y-5 pb-4">
+        {messages.map((msg) =>
+          msg.from === "user" ? (
+            <div key={msg.id} className="flex justify-end">
+              <div
+                className="max-w-[85%] sm:max-w-md px-4 py-3 rounded-2xl text-sm leading-relaxed"
+                style={{ background: "var(--navy)", color: "#FFF", borderBottomRightRadius: 4, boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}
+              >
+                {msg.text}
+              </div>
+            </div>
+          ) : (
+            <div key={msg.id} className="space-y-3">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "var(--navy)" }}>
+                  <Sparkles size={14} className="text-white" />
                 </div>
-                <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+                <div
+                  className="max-w-[85%] sm:max-w-md px-4 py-3 rounded-2xl text-sm leading-relaxed"
+                  style={{ background: "var(--card)", color: "var(--foreground)", borderBottomLeftRadius: 4, boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}
+                >
+                  {msg.text}
+                </div>
               </div>
 
-              {messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} gap-3`}>
-                  {msg.role === "assistant" && (
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: "var(--navy)" }}>
-                      <Bot size={16} className="text-white" />
-                    </div>
-                  )}
-                  <div className={`max-w-lg ${msg.role === "user" ? "items-end" : "items-start"} flex flex-col gap-1`}>
-                    <div className="px-4 py-3.5 rounded-2xl text-sm leading-relaxed whitespace-pre-line"
-                      style={{
-                        background: msg.role === "user" ? "var(--navy)" : "var(--card)",
-                        color: msg.role === "user" ? "#FFF" : "var(--foreground)",
-                        border: msg.role === "assistant" ? "1px solid var(--border)" : "none",
-                        borderBottomRightRadius: msg.role === "user" ? 4 : undefined,
-                        borderBottomLeftRadius: msg.role === "assistant" ? 4 : undefined,
-                      }}>
-                      {msg.content}
-                    </div>
-                    {msg.role === "assistant" && i > 0 && (
-                      <div className="flex gap-1.5">
-                        <button className="p-1 rounded hover:bg-slate-100 transition-colors">
-                          <Copy size={12} className="text-slate-400" />
-                        </button>
-                        <button className="p-1 rounded hover:bg-slate-100 transition-colors">
-                          <ThumbsUp size={12} className="text-slate-400" />
-                        </button>
-                        <button className="p-1 rounded hover:bg-slate-100 transition-colors">
-                          <ThumbsDown size={12} className="text-slate-400" />
-                        </button>
-                        <button className="p-1 rounded hover:bg-slate-100 transition-colors">
-                          <RefreshCw size={12} className="text-slate-400" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {loading && (
-                <div className="flex gap-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: "var(--navy)" }}>
-                    <Bot size={16} className="text-white" />
-                  </div>
-                  <div className="px-4 py-3.5 rounded-2xl border" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
-                    <div className="flex gap-1.5 items-center">
-                      <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "var(--navy)", animationDelay: "0ms" }} />
-                      <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "var(--navy)", animationDelay: "150ms" }} />
-                      <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "var(--navy)", animationDelay: "300ms" }} />
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Suggested questions */}
-            {messages.length === 1 && (
-              <div className="px-6 pb-4">
-                <p className="text-xs font-semibold mb-2" style={{ color: "var(--muted-foreground)" }}>Suggestions :</p>
-                <div className="flex flex-wrap gap-2">
-                  {suggestedQuestions.map(q => (
-                    <button key={q} onClick={() => handleSendMessage(q)}
-                      className="px-3 py-2 rounded-xl text-xs font-medium border hover:bg-slate-50 transition-colors text-left"
-                      style={{ borderColor: "var(--border)", color: "var(--navy)" }}>
-                      {q}
-                    </button>
+              {msg.results && (
+                <div className="pl-[42px] grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {msg.results.map((r) => (
+                    <FreelancerCard key={r.freelancer.id} freelancer={r.freelancer} matchedSkills={r.matchedSkills} onViewProfile={onViewProfile} />
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Input */}
-            <div className="px-6 pb-6">
-              <div className="flex gap-3 items-end">
-                <textarea
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-                  placeholder="Posez votre question à l'IA..."
-                  rows={1}
-                  className="flex-1 px-4 py-3.5 rounded-xl text-sm border outline-none resize-none"
-                  style={{ borderColor: "var(--border)", background: "var(--card)", color: "var(--foreground)" }}
-                />
-                <button onClick={() => handleSendMessage()} disabled={!input.trim() || loading}
-                  className="p-3.5 rounded-xl flex-shrink-0 transition-all"
-                  style={{
-                    background: input.trim() && !loading ? "var(--navy)" : "var(--secondary)",
-                    color: input.trim() && !loading ? "#FFF" : "var(--muted-foreground)",
-                  }}>
-                  {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-                </button>
-              </div>
-              <p className="text-xs mt-2 text-center" style={{ color: "var(--muted-foreground)" }}>
-                L'IA peut faire des erreurs. Vérifiez les informations importantes.
-              </p>
+              )}
             </div>
-          </div>
+          )
         )}
 
-        {tab === "recommendations" && (
-          <div className="p-6 max-w-4xl mx-auto space-y-6">
-            <div className="flex items-center gap-3 p-4 rounded-2xl border"
-              style={{ background: "linear-gradient(135deg, var(--navy) 0%, #1E293B 100%)", borderColor: "transparent" }}>
-              <Sparkles size={20} style={{ color: "var(--gold)" }} />
-              <div>
-                <p className="text-white font-semibold">Recommandations personnalisées par IA</p>
-                <p className="text-white/60 text-xs">Basées sur votre projet « Refonte Site Corporate » et vos préférences</p>
-              </div>
-              <button className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-white hover:bg-white/10">
-                <RefreshCw size={13} /> Actualiser
+        {searching && <SearchingBubble />}
+
+        {!hasConversationStarted && !searching && (
+          <div className="pl-[42px] flex flex-wrap gap-2">
+            {suggestedPrompts.map((p) => (
+              <button
+                key={p}
+                onClick={() => submit(p)}
+                className="px-3 py-2 rounded-xl text-xs font-medium border text-left transition-colors hover:bg-slate-50"
+                style={{ borderColor: "var(--border)", color: "var(--navy)", background: "var(--card)" }}
+              >
+                {p}
               </button>
-            </div>
-
-            <div className="space-y-4">
-              {recommendedProfiles.map((profile, i) => (
-                <div key={profile.name} className="p-5 rounded-2xl border bg-white" style={{ borderColor: "var(--border)" }}>
-                  <div className="flex items-start gap-4">
-                    <div className="relative">
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold"
-                        style={{ background: "var(--secondary)", color: "var(--navy)" }}>
-                        {profile.name.split(" ").map(n => n[0]).join("")}
-                      </div>
-                      <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-                        style={{ background: i === 0 ? "var(--gold)" : "var(--secondary)", color: i === 0 ? "var(--navy)" : "var(--muted-foreground)" }}>
-                        {i + 1}
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <h4 className="font-semibold" style={{ color: "var(--navy)" }}>{profile.name}</h4>
-                          <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{profile.specialty}</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-24 h-2 rounded-full overflow-hidden" style={{ background: "var(--secondary)" }}>
-                              <div className="h-full rounded-full" style={{ width: `${profile.score}%`, background: "var(--gold)" }} />
-                            </div>
-                            <span className="text-sm font-bold" style={{ color: "var(--navy)" }}>{profile.score}%</span>
-                          </div>
-                          <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>Score IA</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="flex items-center gap-1">
-                          <Star size={12} fill="var(--gold)" style={{ color: "var(--gold)" }} />
-                          <span className="text-xs font-bold" style={{ color: "var(--navy)" }}>{profile.rating}</span>
-                        </div>
-                        <span className="text-xs font-medium" style={{ color: "var(--navy)" }}>{profile.price} FCFA</span>
-                      </div>
-                      <div className="p-3 rounded-xl mb-3" style={{ background: "#F0F9FF", border: "1px solid #BAE6FD" }}>
-                        <p className="text-xs text-blue-700">💡 <strong>Pourquoi IA recommande :</strong> {profile.reason}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5 mb-3">
-                        {profile.tags.map(t => (
-                          <span key={t} className="px-2.5 py-1 rounded-lg text-xs font-medium"
-                            style={{ background: "var(--secondary)", color: "var(--navy)" }}>{t}</span>
-                        ))}
-                      </div>
-                      <div className="flex gap-2">
-                        <a href="/enterprise/freelancer/1"
-                          className="px-4 py-2 rounded-xl text-xs font-semibold"
-                          style={{ background: "var(--navy)", color: "#FFF" }}>
-                          Voir le profil
-                        </a>
-                        <a href="/messages"
-                          className="px-4 py-2 rounded-xl text-xs font-medium border"
-                          style={{ borderColor: "var(--border)", color: "var(--navy)" }}>
-                          Contacter
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
         )}
 
-        {tab === "reports" && (
-          <div className="p-6 max-w-3xl mx-auto space-y-6">
-            <div className="p-6 rounded-2xl border bg-white" style={{ borderColor: "var(--border)" }}>
-              <h3 className="font-semibold mb-4" style={{ color: "var(--navy)" }}>Générer un rapport</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: "var(--navy)" }}>Type de rapport</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { id: "performance", label: "Performance globale", icon: <TrendingUp size={16} /> },
-                      { id: "applications", label: "Analyse candidatures", icon: <Briefcase size={16} /> },
-                      { id: "earnings", label: "Rapport financier", icon: <BarChart2 size={16} /> },
-                      { id: "profile", label: "Analyse profil", icon: <Users size={16} /> },
-                    ].map(r => (
-                      <button key={r.id} onClick={() => setReportType(r.id)}
-                        className="flex items-center gap-3 p-4 rounded-xl border text-left transition-all"
-                        style={{
-                          background: reportType === r.id ? "var(--navy)" : "transparent",
-                          borderColor: reportType === r.id ? "var(--navy)" : "var(--border)",
-                          color: reportType === r.id ? "#FFF" : "var(--navy)",
-                        }}>
-                        {r.icon}
-                        <span className="text-sm font-medium">{r.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--navy)" }}>Période de début</label>
-                    <input type="date" className="w-full px-4 py-3 rounded-xl text-sm border outline-none"
-                      style={{ borderColor: "var(--border)", background: "var(--card)", color: "var(--foreground)" }}
-                      defaultValue="2026-01-01" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--navy)" }}>Période de fin</label>
-                    <input type="date" className="w-full px-4 py-3 rounded-xl text-sm border outline-none"
-                      style={{ borderColor: "var(--border)", background: "var(--card)", color: "var(--foreground)" }}
-                      defaultValue="2026-06-11" />
-                  </div>
-                </div>
-                <button onClick={generateReport} disabled={generatingReport}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold"
-                  style={{ background: "var(--navy)", color: "#FFF" }}>
-                  {generatingReport ? <><Loader2 size={16} className="animate-spin" /> Génération en cours...</> : <>
-                    <Sparkles size={16} /> Générer le rapport IA
-                  </>}
-                </button>
-              </div>
-            </div>
+        <div ref={endRef} />
+      </div>
 
-            {reportReady && (
-              <div className="p-6 rounded-2xl border bg-white" style={{ borderColor: "var(--border)" }}>
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="font-semibold" style={{ color: "var(--navy)" }}>Rapport de Performance — Jan-Jun 2026</h3>
-                  <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border"
-                    style={{ borderColor: "var(--border)", color: "var(--navy)" }}>
-                    <FileText size={14} /> Télécharger PDF
-                  </button>
-                </div>
-                <div className="space-y-5">
-                  <div className="p-4 rounded-xl" style={{ background: "var(--secondary)" }}>
-                    <p className="text-sm font-semibold mb-1" style={{ color: "var(--navy)" }}>📊 Résumé Exécutif</p>
-                    <p className="text-sm" style={{ color: "var(--foreground)" }}>
-                      Sur la période analysée, votre performance globale est <strong>excellente</strong> avec un score de 91/100.
-                      Vous avez complété <strong>5 projets</strong> avec un taux de satisfaction de <strong>96%</strong>.
-                      Vos revenus ont progressé de <strong>+41%</strong> par rapport à la même période l'année précédente.
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { label: "Revenus", value: "1.95M FCFA", trend: "+41%" },
-                      { label: "Projets", value: "5", trend: "+2" },
-                      { label: "Note moy.", value: "4.9/5", trend: "+0.2" },
-                    ].map(s => (
-                      <div key={s.label} className="p-4 rounded-xl text-center" style={{ background: "#DCFCE7" }}>
-                        <p className="text-xl font-bold" style={{ color: "#166534" }}>{s.value}</p>
-                        <p className="text-xs" style={{ color: "#166534" }}>{s.trend}</p>
-                        <p className="text-xs mt-0.5" style={{ color: "#166534" }}>{s.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold mb-2" style={{ color: "var(--navy)" }}>🎯 Recommandations IA</p>
-                    <ul className="space-y-2">
-                      {[
-                        "Augmentez votre tarif de 10% — votre taux d'acceptation justifie une valorisation plus haute",
-                        "Ajoutez 2 projets portfolio dans la catégorie Mobile pour attirer plus de clients",
-                        "Complétez la certification AWS Solutions Architect pour booster votre visibilité de 35%",
-                      ].map((rec, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm" style={{ color: "var(--foreground)" }}>
-                          <Sparkles size={14} className="mt-0.5 flex-shrink-0" style={{ color: "var(--gold)" }} />
-                          {rec}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {tab === "analysis" && (
-          <div className="p-6 max-w-4xl mx-auto space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {[
-                { title: "Analyse du marché", icon: <TrendingUp size={20} />, content: "Les projets React sont en hausse de 34% ce trimestre. Votre profil correspond à 87% des offres actives. Les budgets moyens ont augmenté de 12% depuis janvier.", color: "#DBEAFE" },
-                { title: "Analyse de votre profil", icon: <Users size={20} />, content: "Score de compétitivité: 91/100. Points forts: expertise technique, délais respectés. À améliorer: diversité portfolio, certifications cloud.", color: "#F0FDF4" },
-                { title: "Analyse des concurrents", icon: <Star size={20} />, content: "Vous êtes dans le top 15% des freelancers React sur la plateforme. Votre tarif est 8% en dessous de la médiane — vous pouvez augmenter.", color: "#FEF9C3" },
-                { title: "Prévisions", icon: <BarChart2 size={20} />, content: "Basé sur vos performances, l'IA prédit des revenus de 2.4M FCFA pour le second semestre si vous maintenez votre rythme de candidature.", color: "#F3E8FF" },
-              ].map(card => (
-                <div key={card.title} className="p-5 rounded-2xl border bg-white" style={{ borderColor: "var(--border)" }}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: card.color }}>
-                      <span style={{ color: "var(--navy)" }}>{card.icon}</span>
-                    </div>
-                    <h4 className="font-semibold" style={{ color: "var(--navy)" }}>{card.title}</h4>
-                  </div>
-                  <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>{card.content}</p>
-                  <button className="mt-3 text-xs font-medium hover:underline" style={{ color: "var(--gold)" }}>
-                    Voir l'analyse complète →
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+      {/* Zone de saisie (fixe) */}
+      <div className="px-4 md:px-0 pt-3 pb-4 border-t shrink-0" style={{ borderColor: "var(--border)" }}>
+        <div className="flex items-end gap-2.5">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                submit(input);
+              }
+            }}
+            placeholder="Décrivez le profil recherché : compétences, durée, contexte du projet..."
+            rows={1}
+            className="flex-1 px-4 py-3 rounded-xl text-sm border outline-none resize-none focus:ring-2"
+            style={{ borderColor: "var(--border)", background: "var(--secondary)", color: "var(--foreground)", maxHeight: "120px", overflowY: "auto" }}
+          />
+          <button
+            onClick={() => submit(input)}
+            disabled={!input.trim() || searching}
+            className="p-3 rounded-xl flex-shrink-0 transition-all disabled:cursor-not-allowed"
+            style={{
+              background: input.trim() && !searching ? "var(--navy)" : "var(--secondary)",
+              color: input.trim() && !searching ? "#FFF" : "var(--muted-foreground)",
+            }}
+            aria-label="Envoyer"
+          >
+            <Send size={18} />
+          </button>
+        </div>
+        <p className="text-[11px] mt-2 flex items-center gap-1.5" style={{ color: "var(--muted-foreground)" }}>
+          <Info size={11} /> Les suggestions sont générées automatiquement à partir des profils publiés — vérifiez toujours les avis avant de contacter un freelance.
+        </p>
       </div>
     </div>
   );

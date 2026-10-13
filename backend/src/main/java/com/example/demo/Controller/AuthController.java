@@ -59,8 +59,8 @@ public class AuthController {
             @RequestBody registerRequest request) {
 
         User u = userService.registerPrestataire(
-                request.getNom(), request.getPrenom(), request.getEmail(), request.getPassword(), request.getPhone(), request.getPays(),
-               request.getSpecialite(),request.getCompetence(), request.getExperience(),request.getDescription()
+                request.getNom(), request.getPrenom(), request.getEmail(), request.getPassword(), request.getPhone()
+
         );
 
         System.out.println("🟢 Utilisateur créé avec le code : " + u.getActivationCode());

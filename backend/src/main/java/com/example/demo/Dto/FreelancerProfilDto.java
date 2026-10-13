@@ -23,9 +23,11 @@ public class FreelancerProfilDto {
     private String siteweb;
     private String langues;
     private String photoUrl;
-    private List<Competence> competence;
+    private List<String> competence;
     private int completionPourcentage;
 
+
+    private boolean certifie;
 
 
     // Getters & Setters
@@ -65,8 +67,10 @@ public class FreelancerProfilDto {
     public void setLangues(String langues) { this.langues = langues; }
     public String getPhotoUrl() { return photoUrl; }
     public void setPhotoUrl(String photoUrl) { this.photoUrl = photoUrl; }
-    public List<Competence> getCompetence() { return competence; }
-    public void setCompetence(List<Competence> competence) { this.competence = competence; }
+    public List<String> getCompetence() { return competence; }
+    public void setCompetence(List<String> competence) { this.competence = competence; }
     public int getCompletionPourcentage() { return completionPourcentage; }
     public void setCompletionPourcentage(int completionPourcentage) { this.completionPourcentage = completionPourcentage; }
+    public boolean isCertifie() { return certifie; }
+    public void setCertifie(boolean certifie) { this.certifie = certifie; }
 }

@@ -23,12 +23,9 @@ public class RecommendationService {
         if (freelancer.getCompetence() != null) {
 
             long nb = competencesRecherchees.stream()
-                    .filter(c -> freelancer.getCompetence()
-                            .stream()
-                            .map(fc -> fc.getCategorie().getNom().toLowerCase())
-                            .anyMatch(f -> f.contains(c.toLowerCase())))
+                    .filter(c -> competencesRecherchees.stream()
+                            .anyMatch(f -> f.equalsIgnoreCase(c)))
                     .count();
-
             score += Math.min(40, (int) (nb * 10));
         }
         // Expérience (20 pts)

@@ -7,6 +7,21 @@ import {
   Users, Briefcase, CreditCard, Clock, TrendingUp, Play
 } from "lucide-react";
 
+// ─── Polices ────────────────────────────────────────────────────────────────
+// Fraunces (display, empattements marqués, presque "gravé au bois") + Work Sans
+// (corps, humaniste et chaleureux) remplacent la paire générique par défaut.
+// Idéalement ce lien va dans <head> de index.html pour la performance ; il est
+// injecté ici via <style> pour que le composant reste autonome.
+const FONT_DISPLAY = "'Fraunces', Georgia, serif";
+const FONT_BODY = "'Work Sans', 'Segoe UI', sans-serif";
+function FontImports() {
+  return (
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,800&family=Work+Sans:wght@400;500;600;700&display=swap');
+    `}</style>
+  );
+}
+
 // ─── Animation variants ───────────────────────────────────────────────────────
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -17,78 +32,94 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } },
 };
 
-// ─── Palette d'accent camerounaise ─────────────────────────────────────────
-// Or (identité free-kaolo), Rouge et Vert (drapeau du Cameroun) — utilisés
-// avec parcimonie, comme touches, jamais en aplat dominant.
+// ─── Palette camerounaise ───────────────────────────────────────────────────
+// Or (identité free-kaolo) sur fond marine profond — le vert et le rouge du
+// drapeau restent des touches, jamais un aplat dominant.
 const CM = {
-  gold: "#D4AF37",
-  goldLight: "#F0D060",
-  red: "#C1272D",
-  green: "#1B7A43",
+  ember: "#D4AF37",   // or — accent primaire
+  gold: "#F0D060",    // or clair — accent secondaire (dégradés, surbrillances)
+  clay: "#8A6D1F",     // or assourdi — profondeur (anneaux, structure)
+  green: "#1B7A43",   // vert Cameroun
+  red: "#C1272D",     // rouge Cameroun
 };
 const colors = {
-  ink: "#0B1220",
-  navy: "#10233F",
+  ink: "#080F1D",        // marine profond — fond sombre de base
+  inkSoft: "#0F172A",    // surface sombre secondaire
+  inkDeep: "#050A14",    // surface la plus profonde (footer)
+  bone: "#F8FAFC",       // blanc froid — fond clair
+  boneBorder: "#E2E8F0", // bordure sur fond clair
+  charcoal: "#0F172A",   // texte principal sur fond clair
+  muted: "#64748B",      // texte secondaire
+};
 
-  gold: "#C9A227",
-  goldSoft: "#F5E9B8",
+// ─── Bande cérémonielle (3 registres) ──────────────────────────────────────
+// Remplace le simple filet triangulaire par une véritable bordure à trois
+// niveaux — zigzag, cercles pointillés, losanges — comme le cadrage en
+// couches que l'on voit border les motifs concentriques de référence.
+function CeremonialBand({ tone = "dark" }: { tone?: "dark" | "light" }) {
+  const bg = tone === "dark" ? colors.inkDeep : colors.bone;
+  const zigzag = Array.from({ length: 24 });
+  const dots = Array.from({ length: 32 });
+  const diamonds = Array.from({ length: 16 });
 
-  cream: "#FAF8F2",
-  surface: "#FFFFFF",
-
-  border: "#E4E7EC",
-  muted: "#667085",
-
-  success: "#087443",
-  successSoft: "#E9F8F0",
-
-  warning: "#B54708",
-  warningSoft: "#FFF4E5",
-
-  danger: "#B42318",
-  dangerSoft: "#FDECEC",
-
-  info: "#175CD3",
-  infoSoft: "#EFF8FF",
-}; 
-
-// ─── Toghu strip ──────────────────────────────────────────────────────────
-// Bande décorative inspirée du Toghu, l'habit brodé traditionnel des
-// Grassfields (Ouest-Cameroun) : triangles noirs rebrodés de motifs
-// or et rouge, portés par les notables lors des cérémonies.
-function ToghuStrip({ tone = "dark" }: { tone?: "dark" | "light" }) {
-  const bg = tone === "dark" ? "#050A14" : "#F8FAFC";
-  const tri = Array.from({ length: 24 });
   return (
     <div aria-hidden="true" className="w-full overflow-hidden leading-none" style={{ background: bg }}>
-      <svg viewBox="0 0 960 28" preserveAspectRatio="none" className="w-full h-7 block">
-        <rect width="960" height="28" fill="#0B0604" />
-        {tri.map((_, i) => {
+      <svg viewBox="0 0 960 46" preserveAspectRatio="none" className="w-full h-[46px] block">
+        <rect width="960" height="46" fill="#0B0604" />
+
+        {/* Registre 1 — zigzag triangulaire */}
+        {zigzag.map((_, i) => {
           const x = i * 40;
           const up = i % 2 === 0;
-          const fill = i % 4 === 0 ? CM.gold : i % 4 === 2 ? CM.red : "#0B0604";
+          const fill = i % 4 === 0 ? CM.ember : i % 4 === 2 ? CM.gold : "#0B0604";
           return up ? (
-            <polygon key={i} points={`${x},28 ${x + 20},4 ${x + 40},28`} fill={fill} opacity={fill === "#0B0604" ? 0 : 0.9} />
+            <polygon key={`z${i}`} points={`${x},14 ${x + 20},1 ${x + 40},14`} fill={fill} />
           ) : (
-            <polygon key={i} points={`${x},0 ${x + 20},24 ${x + 40},0`} fill={fill} opacity={fill === "#0B0604" ? 0 : 0.55} />
+            <polygon key={`z${i}`} points={`${x},1 ${x + 20},13 ${x + 40},1`} fill={fill} opacity="0.55" />
           );
         })}
-        <line x1="0" y1="14" x2="960" y2="14" stroke={CM.gold} strokeOpacity="0.25" strokeWidth="1" />
+
+        <line x1="0" y1="15.5" x2="960" y2="15.5" stroke={CM.gold} strokeOpacity="0.3" strokeWidth="1" />
+
+        {/* Registre 2 — cercles pointillés, motif dominant de la trame de référence */}
+        {dots.map((_, i) => {
+          const x = 15 + i * 30;
+          const fill = i % 3 === 0 ? CM.gold : i % 3 === 1 ? CM.ember : CM.clay;
+          return <circle key={`d${i}`} cx={x} cy={24} r={i % 4 === 0 ? 3.2 : 2} fill={fill} opacity={i % 4 === 0 ? 0.95 : 0.55} />;
+        })}
+
+        <line x1="0" y1="33" x2="960" y2="33" stroke={CM.gold} strokeOpacity="0.18" strokeWidth="1" />
+
+        {/* Registre 3 — losanges, clin d'œil discret vert/rouge du drapeau */}
+        {diamonds.map((_, i) => {
+          const x = 20 + i * 60;
+          const fill = i % 2 === 0 ? CM.green : CM.red;
+          return (
+            <polygon
+              key={`di${i}`}
+              points={`${x},34 ${x + 8},40 ${x},46 ${x - 8},40`}
+              fill={fill}
+              opacity="0.5"
+            />
+          );
+        })}
       </svg>
     </div>
   );
 }
 
-// ─── Ndop texture ───────────────────────────────────────────────────────────
-// Trame de losanges concentriques, motif récurrent du Ndop (tissu royal
-// bamiléké teint à l'indigo) — utilisée ici en filigrane, très discrète.
+// ─── Trame de fond (losanges + triangles) ──────────────────────────────────
+// Filigrane discret pour les sections pleines, inspiré du tissage Ndop et des
+// registres triangulaires de l'image de référence.
 function NdopTexture({ opacity = 0.05 }: { opacity?: number }) {
   return (
     <svg aria-hidden="true" className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity }}>
       <defs>
-        <pattern id="ndop-diamond" width="56" height="56" patternUnits="userSpaceOnUse">
-          <path d="M28 4 L52 28 L28 52 L4 28 Z" fill="none" stroke="#D4AF37" strokeWidth="1" />
-          <path d="M28 16 L40 28 L28 40 L16 28 Z" fill="none" stroke="#D4AF37" strokeWidth="1" />
+        <pattern id="ndop-diamond" width="64" height="64" patternUnits="userSpaceOnUse">
+          <path d="M32 4 L58 32 L32 58 L6 32 Z" fill="none" stroke={CM.gold} strokeWidth="1" />
+          <path d="M32 16 L46 32 L32 46 L18 32 Z" fill="none" stroke={CM.gold} strokeWidth="1" />
+          <circle cx="32" cy="32" r="3" fill="none" stroke={CM.ember} strokeWidth="1" />
+          <path d="M0 32 L8 26 L16 32 L8 38 Z" fill="none" stroke={CM.ember} strokeWidth="0.8" opacity="0.6" />
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill="url(#ndop-diamond)" />
@@ -96,10 +127,25 @@ function NdopTexture({ opacity = 0.05 }: { opacity?: number }) {
   );
 }
 
-// ─── Emblème spirale (bélier) ───────────────────────────────────────────────
-// Inspiré des cornes de bélier stylisées que l'on retrouve sur les trônes
-// et masques bamiléké — symbole de sagesse et d'autorité, ici réutilisé
-// comme motif graphique du "score" et des marques de confiance.
+// ─── Médaillon à cercles concentriques ─────────────────────────────────────
+// L'élément signature de la page : reprend directement le motif de roues
+// concentriques de l'image de référence, utilisé pour numéroter les étapes
+// au lieu d'un carré plat générique.
+function RoundelMedallion({ label, size = 56 }: { label: string; size?: number }) {
+  const r = size / 2;
+  return (
+    <svg width={size} height={size} viewBox="0 0 56 56" aria-hidden="true">
+      <circle cx="28" cy="28" r="27" fill="none" stroke={CM.clay} strokeWidth="1.5" opacity="0.5" />
+      <circle cx="28" cy="28" r="22" fill="none" stroke={CM.gold} strokeWidth="1.5" strokeDasharray="2 3" opacity="0.8" />
+      <circle cx="28" cy="28" r="18" fill={colors.inkSoft} stroke={CM.ember} strokeWidth="2" />
+      <text x="28" y="34" textAnchor="middle" fontSize="16" fontWeight="700" fill={CM.gold} fontFamily={FONT_DISPLAY}>
+        {label}
+      </text>
+    </svg>
+  );
+}
+
+// ─── Ram spiral (emblème bélier — sagesse et autorité, motif bamiléké) ─────
 function RamSpiralIcon({ size = 22, color = CM.gold }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" fill="none" aria-hidden="true">
@@ -131,8 +177,6 @@ function Counter({ value, suffix = "", prefix = "" }: { value: number; suffix?: 
 }
 
 // ─── Cameroon network map ─────────────────────────────────────────────────────
-// Carte centrale du Hero : réseau de talents et d'opportunités au Cameroun.
-// Les villes sont des points d'activité, les lignes représentent les connexions.
 function CameroonNetworkMap() {
   const cities = [
     { name: "Maroua", x: 58, y: 13, featured: false },
@@ -176,8 +220,8 @@ function CameroonNetworkMap() {
       className="relative w-full overflow-hidden rounded-[28px]"
       style={{
         height: 650,
-        background: "radial-gradient(circle at 50% 45%, rgba(27,122,67,0.13), transparent 45%), #07111D",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: `radial-gradient(circle at 50% 45%, rgba(27,122,67,0.14), transparent 45%), ${colors.inkDeep}`,
+        border: `1px solid rgba(212,175,55,0.14)`,
       }}
     >
       <div
@@ -194,7 +238,7 @@ function CameroonNetworkMap() {
           <p className="text-[9px] font-bold uppercase tracking-[0.25em]" style={{ color: "rgba(255,255,255,.3)" }}>
             Réseau national
           </p>
-          <p className="mt-1 text-sm font-semibold text-white">Les talents du Cameroun</p>
+          <p className="mt-1 text-sm font-semibold text-white" style={{ fontFamily: FONT_DISPLAY }}>Les talents du Cameroun</p>
         </div>
 
         <div
@@ -209,11 +253,11 @@ function CameroonNetworkMap() {
       <svg viewBox="0 0 500 680" className="absolute inset-x-0 top-[30px] mx-auto h-[590px] w-full" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
         <defs>
           <linearGradient id="cameroonFill" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#132B2A" />
-            <stop offset="100%" stopColor="#0A1724" />
+            <stop offset="0%" stopColor={colors.inkSoft} />
+            <stop offset="100%" stopColor={colors.inkDeep} />
           </linearGradient>
           <linearGradient id="cameroonStroke" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#D4AF37" />
+            <stop offset="0%" stopColor={CM.gold} />
             <stop offset="45%" stopColor="#39B879" />
             <stop offset="100%" stopColor="#087443" />
           </linearGradient>
@@ -260,7 +304,7 @@ function CameroonNetworkMap() {
               y1={y1}
               x2={x2}
               y2={y2}
-              stroke={index % 2 === 0 ? "#39B879" : "#D4AF37"}
+              stroke={index % 2 === 0 ? "#39B879" : CM.gold}
               strokeWidth="1.2"
               strokeDasharray="4 6"
               initial={{ opacity: 0 }}
@@ -272,11 +316,11 @@ function CameroonNetworkMap() {
 
         <motion.circle
           r="3"
-          fill="#F0D060"
+          fill={CM.gold}
           initial={{ opacity: 0, cx: 215, cy: 475 }}
           animate={{ opacity: [0, 1, 1, 0], cx: [215, 265, 175, 265], cy: [475, 380, 325, 380] }}
           transition={{ duration: 4, repeat: Infinity, repeatDelay: 1, ease: "easeInOut" }}
-          style={{ filter: "drop-shadow(0 0 8px rgba(240,208,96,.9))" }}
+          style={{ filter: `drop-shadow(0 0 8px rgba(212,175,55,.9))` }}
         />
       </svg>
 
@@ -300,14 +344,14 @@ function CameroonNetworkMap() {
           <div
             className="relative h-3.5 w-3.5 rounded-full"
             style={{
-              background: city.featured ? "#F0D060" : "#39B879",
-              border: "2px solid #07111D",
-              boxShadow: city.featured ? "0 0 18px rgba(240,208,96,.7)" : "0 0 14px rgba(57,184,121,.5)",
+              background: city.featured ? CM.gold : "#39B879",
+              border: `2px solid ${colors.inkDeep}`,
+              boxShadow: city.featured ? "0 0 18px rgba(212,175,55,.7)" : "0 0 14px rgba(57,184,121,.5)",
             }}
           />
           <span
             className="absolute left-1/2 top-5 -translate-x-1/2 whitespace-nowrap text-[9px] font-semibold"
-            style={{ color: city.featured ? "#F0D060" : "rgba(255,255,255,.45)" }}
+            style={{ color: city.featured ? CM.gold : "rgba(255,255,255,.45)" }}
           >
             {city.name}
           </span>
@@ -334,21 +378,18 @@ function StepCard({ number, title, desc, icon }: { number: string; title: string
     <motion.div variants={fadeUp} className="relative">
       <div className="flex gap-5">
         <div className="flex-shrink-0 relative">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-lg"
-            style={{ background: "linear-gradient(135deg, #D4AF37, #F0D060)", color: "#0F172A" }}>
-            {number}
-          </div>
+          <RoundelMedallion label={number} size={56} />
           {number !== "3" && (
-            <div className="absolute top-12 left-1/2 -translate-x-1/2 w-px h-12 mt-1"
-              style={{ background: "linear-gradient(180deg, rgba(212,175,55,0.4), transparent)" }} />
+            <div className="absolute top-14 left-1/2 -translate-x-1/2 w-px h-10 mt-1"
+              style={{ background: `linear-gradient(180deg, rgba(212,175,55,0.4), transparent)` }} />
           )}
         </div>
         <div className="flex-1 pb-12">
           <div className="flex items-center gap-2 mb-2">
-            <span style={{ color: "#D4AF37" }}>{icon}</span>
-            <h4 className="font-bold text-lg" style={{ color: "var(--navy)" }}>{title}</h4>
+            <span style={{ color: CM.ember }}>{icon}</span>
+            <h4 className="font-bold text-lg" style={{ color: colors.charcoal, fontFamily: FONT_DISPLAY }}>{title}</h4>
           </div>
-          <p className="text-sm leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{desc}</p>
+          <p className="text-sm leading-relaxed" style={{ color: colors.muted }}>{desc}</p>
         </div>
       </div>
     </motion.div>
@@ -371,7 +412,7 @@ function FeatureCard({ icon, title, desc, accent }: { icon: React.ReactNode; tit
           style={{ background: `${accent}18`, color: accent }}>
           {icon}
         </div>
-        <h4 className="font-bold text-white mb-2">{title}</h4>
+        <h4 className="font-bold text-white mb-2" style={{ fontFamily: FONT_DISPLAY }}>{title}</h4>
         <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>{desc}</p>
       </div>
     </motion.div>
@@ -385,26 +426,26 @@ function TestimonialCard({ name, role, company, text, rating, avatar }: {
   return (
     <motion.div
       variants={fadeUp}
-      whileHover={{ y: -4, boxShadow: "0 20px 60px rgba(0,0,0,0.1)" }}
+      whileHover={{ y: -4, boxShadow: "0 20px 60px rgba(15,23,42,0.12)" }}
       className="p-7 rounded-2xl border bg-white flex flex-col gap-5"
-      style={{ borderColor: "var(--border)" }}
+      style={{ borderColor: colors.boneBorder }}
     >
       <div className="flex gap-0.5">
         {Array.from({ length: rating }).map((_, i) => (
-          <Star key={i} size={14} fill="#D4AF37" style={{ color: "#D4AF37" }} />
+          <Star key={i} size={14} fill={CM.gold} style={{ color: CM.gold }} />
         ))}
       </div>
-      <p className="text-sm leading-relaxed flex-1" style={{ color: "#334155" }}>
+      <p className="text-sm leading-relaxed flex-1" style={{ color: "#1E293B" }}>
         "{text}"
       </p>
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
-          style={{ background: "linear-gradient(135deg, #0F172A, #1E293B)", color: "#D4AF37" }}>
+          style={{ background: `linear-gradient(135deg, ${colors.inkSoft}, #1E293B)`, color: CM.gold }}>
           {avatar}
         </div>
         <div>
-          <p className="text-sm font-bold" style={{ color: "#0F172A" }}>{name}</p>
-          <p className="text-xs" style={{ color: "#64748B" }}>{role} — {company}</p>
+          <p className="text-sm font-bold" style={{ color: colors.charcoal }}>{name}</p>
+          <p className="text-xs" style={{ color: colors.muted }}>{role} — {company}</p>
         </div>
       </div>
     </motion.div>
@@ -431,7 +472,8 @@ export function LandingPage() {
   ];
 
   return (
-    <div className="overflow-x-hidden" style={{ background: "#080F1D", color: "#fff" }}>
+    <div className="overflow-x-hidden" style={{ background: colors.ink, color: "#fff", fontFamily: FONT_BODY }}>
+      <FontImports />
 
       {/* ── NAVBAR ───────────────────────────────────────────────────────── */}
       <motion.header
@@ -442,20 +484,22 @@ export function LandingPage() {
         style={{
           background: scrolled ? "rgba(8,15,29,0.95)" : "transparent",
           backdropFilter: scrolled ? "blur(20px)" : "none",
-          borderBottom: scrolled ? "1px solid rgba(255,255,255,0.07)" : "none",
+          borderBottom: scrolled ? "1px solid rgba(212,175,55,0.12)" : "none",
           transition: "all 0.35s cubic-bezier(0.22, 1, 0.36, 1)",
         }}
       >
         <div className="max-w-7xl mx-auto w-full px-6 flex items-center gap-8">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
-            <motion.div whileHover={{ scale: 1.08, rotate: 4 }} transition={{ type: "spring", stiffness: 400, damping: 14 }}
-              className="w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #D4AF37, #F0D060)" }}>
-              <span className="text-xs font-bold" style={{ color: "#0F172A" }}>FK</span>
-            </motion.div>
-            <span className="text-base font-bold tracking-tight">
-              free<span style={{ color: "#D4AF37" }}>-kaolo</span>
+          <Link to="/" className="flex items-center gap-2 flex-shrink-0">
+            <motion.img
+              src="/assets/logo-freekaolo-badge.png"
+              alt="free-kaolo"
+              whileHover={{ scale: 1.08, rotate: 4 }}
+              transition={{ type: "spring", stiffness: 400, damping: 14 }}
+              className="w-11 h-11 object-contain"
+            />
+            <span className="text-base font-bold tracking-tight" style={{ fontFamily: FONT_DISPLAY }}>
+              free<span style={{ color: CM.gold }}>-kaolo</span>
             </span>
           </Link>
 
@@ -484,7 +528,7 @@ export function LandingPage() {
             <motion.div whileHover={{ scale: 1.03, y: -1 }} whileTap={{ scale: 0.97 }}>
               <Link to="/register/freelancer"
                 className="px-4 py-2 rounded-xl text-sm font-semibold"
-                style={{ background: "linear-gradient(135deg, #D4AF37, #F0D060)", color: "#0F172A" }}>
+                style={{ background: `linear-gradient(135deg, ${CM.ember}, ${CM.gold})`, color: colors.ink }}>
                 Commencer gratuitement
               </Link>
             </motion.div>
@@ -507,7 +551,7 @@ export function LandingPage() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className="fixed top-16 inset-x-0 z-40 md:hidden overflow-hidden"
-            style={{ background: "rgba(8,15,29,0.98)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}
+            style={{ background: "rgba(8,15,29,0.98)", borderBottom: "1px solid rgba(212,175,55,0.12)" }}
           >
             <div className="px-6 py-4 space-y-2">
               {navLinks.map(link => (
@@ -516,11 +560,11 @@ export function LandingPage() {
                   {link.label}
                 </a>
               ))}
-              <div className="pt-3 space-y-2 border-t" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+              <div className="pt-3 space-y-2 border-t" style={{ borderColor: "rgba(212,175,55,0.12)" }}>
                 <Link to="/login" className="block px-4 py-2.5 rounded-xl text-sm text-white/70 text-center">Connexion</Link>
                 <Link to="/register/freelancer"
                   className="block px-4 py-3 rounded-xl text-sm font-semibold text-center"
-                  style={{ background: "linear-gradient(135deg, #D4AF37, #F0D060)", color: "#0F172A" }}>
+                  style={{ background: `linear-gradient(135deg, ${CM.ember}, ${CM.gold})`, color: colors.ink }}>
                   Commencer gratuitement
                 </Link>
               </div>
@@ -531,40 +575,35 @@ export function LandingPage() {
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <section className="relative min-h-screen flex items-center overflow-hidden">
-        {/* Animated background */}
         <div className="absolute inset-0 pointer-events-none">
-          {/* Trame Ndop en filigrane */}
-          <NdopTexture opacity={0.045} />
-          {/* Grid */}
+          <NdopTexture opacity={0.05} />
           <div className="absolute inset-0 opacity-[0.03]"
             style={{
               backgroundImage: "linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)",
               backgroundSize: "48px 48px",
             }} />
-          {/* Orbs */}
           <motion.div
             animate={{ x: [0, 40, 0], y: [0, -30, 0], scale: [1, 1.1, 1] }}
             transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
             className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 70%)" }}
+            style={{ background: "radial-gradient(circle, rgba(212,175,55,0.16) 0%, transparent 70%)" }}
           />
           <motion.div
             animate={{ x: [0, -30, 0], y: [0, 40, 0], scale: [1, 1.05, 1] }}
             transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 4 }}
             className="absolute top-[30%] right-[-10%] w-[500px] h-[500px] rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)" }}
+            style={{ background: "radial-gradient(circle, rgba(212,175,55,0.09) 0%, transparent 70%)" }}
           />
           <motion.div
             animate={{ x: [0, 20, 0], y: [0, -20, 0] }}
             transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
             className="absolute bottom-[-5%] left-[40%] w-[400px] h-[400px] rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(212,175,55,0.06) 0%, transparent 70%)" }}
+            style={{ background: "radial-gradient(circle, rgba(27,122,67,0.07) 0%, transparent 70%)" }}
           />
         </div>
 
         <div className="max-w-7xl mx-auto w-full px-6 pt-28 pb-20 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            {/* Left — copy */}
             <div>
               <motion.div
                 initial={{ opacity: 0, y: -12 }}
@@ -572,9 +611,9 @@ export function LandingPage() {
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               >
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-8"
-                  style={{ background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.25)" }}>
-                  <Sparkles size={12} style={{ color: "#D4AF37" }} />
-                  <span className="text-xs font-semibold" style={{ color: "#D4AF37" }}>
+                  style={{ background: "rgba(212,175,55,0.12)", border: "1px solid rgba(212,175,55,0.3)" }}>
+                  <Sparkles size={12} style={{ color: CM.gold }} />
+                  <span className="text-xs font-semibold" style={{ color: CM.gold }}>
                     Le réseau freelance du Cameroun
                   </span>
                 </div>
@@ -585,11 +624,12 @@ export function LandingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.75, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
                 className="text-5xl xl:text-6xl font-extrabold leading-[1.08] tracking-tight mb-6"
+                style={{ fontFamily: FONT_DISPLAY }}
               >
                 Connectez les{" "}
                 <span className="relative inline-block">
                   <span style={{
-                    background: "linear-gradient(135deg, #D4AF37, #F5D769, #D4AF37)",
+                    background: `linear-gradient(135deg, ${CM.ember}, #F5D769, ${CM.ember})`,
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                   }}>meilleurs talents</span>
@@ -598,7 +638,7 @@ export function LandingPage() {
                     animate={{ scaleX: 1 }}
                     transition={{ duration: 0.8, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
                     className="absolute -bottom-1 left-0 right-0 h-0.5 origin-left"
-                    style={{ background: "linear-gradient(90deg, #D4AF37, transparent)" }}
+                    style={{ background: `linear-gradient(90deg, ${CM.ember}, transparent)` }}
                   />
                 </span>{" "}
                 aux meilleures{" "}
@@ -625,7 +665,7 @@ export function LandingPage() {
                 <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }}>
                   <Link to="/register/freelancer"
                     className="flex items-center gap-2.5 px-6 py-3.5 rounded-xl text-sm font-semibold"
-                    style={{ background: "linear-gradient(135deg, #D4AF37, #F0D060)", color: "#0F172A" }}>
+                    style={{ background: `linear-gradient(135deg, ${CM.ember}, ${CM.gold})`, color: colors.ink }}>
                     Je suis freelancer
                     <ArrowRight size={15} />
                   </Link>
@@ -648,13 +688,12 @@ export function LandingPage() {
                 </motion.div>
               </motion.div>
 
-              {/* Stats */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.48, ease: [0.22, 1, 0.36, 1] }}
                 className="flex flex-wrap gap-8 pt-8 border-t"
-                style={{ borderColor: "rgba(255,255,255,0.08)" }}
+                style={{ borderColor: "rgba(212,175,55,0.15)" }}
               >
                 {[
                   { value: 2400, suffix: "+", label: "Freelancers actifs" },
@@ -662,7 +701,7 @@ export function LandingPage() {
                   { value: 98, suffix: "%", label: "Taux de satisfaction" },
                 ].map(stat => (
                   <div key={stat.label}>
-                    <p className="text-3xl font-extrabold tracking-tight" style={{ color: "#D4AF37" }}>
+                    <p className="text-3xl font-extrabold tracking-tight" style={{ color: CM.gold, fontFamily: FONT_DISPLAY }}>
                       <Counter value={stat.value} suffix={stat.suffix} />
                     </p>
                     <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>{stat.label}</p>
@@ -671,7 +710,6 @@ export function LandingPage() {
               </motion.div>
             </div>
 
-            {/* Right — réseau du Cameroun */}
             <motion.div
               initial={{ opacity: 0, x: 40, scale: 0.96 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
@@ -690,7 +728,7 @@ export function LandingPage() {
                 animate={{ opacity: 1, scale: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 1.1 }}
                 className="absolute -left-5 top-20 hidden rounded-xl px-3 py-2 sm:block"
-                style={{ background: "rgba(7,17,29,.92)", border: "1px solid rgba(57,184,121,.2)", boxShadow: "0 15px 40px rgba(0,0,0,.3)" }}
+                style={{ background: "rgba(8,15,29,.92)", border: "1px solid rgba(57,184,121,.2)", boxShadow: "0 15px 40px rgba(0,0,0,.35)" }}
               >
                 <div className="flex items-center gap-2">
                   <ShieldCheck size={15} style={{ color: "#39B879" }} />
@@ -706,10 +744,10 @@ export function LandingPage() {
                 animate={{ opacity: 1, scale: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 1.35 }}
                 className="absolute -right-5 top-[42%] hidden rounded-xl px-3 py-2 sm:block"
-                style={{ background: "rgba(7,17,29,.92)", border: "1px solid rgba(212,175,55,.2)", boxShadow: "0 15px 40px rgba(0,0,0,.3)" }}
+                style={{ background: "rgba(8,15,29,.92)", border: "1px solid rgba(212,175,55,.22)", boxShadow: "0 15px 40px rgba(0,0,0,.35)" }}
               >
                 <div className="flex items-center gap-2">
-                  <CreditCard size={15} style={{ color: "#F0D060" }} />
+                  <CreditCard size={15} style={{ color: CM.gold }} />
                   <div>
                     <p className="text-[10px] font-bold text-white">Paiement sécurisé</p>
                     <p className="text-[8px]" style={{ color: "rgba(255,255,255,.35)" }}>Transaction protégée</p>
@@ -720,12 +758,10 @@ export function LandingPage() {
           </div>
         </div>
 
-        {/* Bande Toghu — motif triangulaire brodé du Grassfields camerounais */}
         <div className="absolute bottom-0 left-0 right-0 z-10">
-          <ToghuStrip tone="dark" />
+          <CeremonialBand tone="dark" />
         </div>
 
-        {/* Scroll indicator */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -739,7 +775,7 @@ export function LandingPage() {
       </section>
 
       {/* ── TRUSTED BY ───────────────────────────────────────────────────── */}
-      <section className="py-12 border-y" style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+      <section className="py-12 border-y" style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(212,175,55,0.1)" }}>
         <div className="max-w-7xl mx-auto px-6">
           <p className="text-center text-xs font-semibold uppercase tracking-widest mb-8"
             style={{ color: "rgba(255,255,255,0.25)" }}>
@@ -768,7 +804,7 @@ export function LandingPage() {
 
       {/* ── FEATURES ─────────────────────────────────────────────────────── */}
       <section id="features" className="py-28 relative">
-        <NdopTexture opacity={0.035} />
+        <NdopTexture opacity={0.04} />
         <div className="max-w-7xl mx-auto px-6 relative">
           <motion.div
             initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }}
@@ -777,11 +813,11 @@ export function LandingPage() {
           >
             <motion.div variants={fadeUp}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-5"
-              style={{ background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)" }}>
-              <Zap size={11} style={{ color: "#D4AF37" }} />
-              <span className="text-xs font-semibold" style={{ color: "#D4AF37" }}>Tout ce dont vous avez besoin</span>
+              style={{ background: "rgba(212,175,55,0.12)", border: "1px solid rgba(212,175,55,0.28)" }}>
+              <Zap size={11} style={{ color: CM.gold }} />
+              <span className="text-xs font-semibold" style={{ color: CM.gold }}>Tout ce dont vous avez besoin</span>
             </motion.div>
-            <motion.h2 variants={fadeUp} className="text-4xl xl:text-5xl font-extrabold text-white tracking-tight mb-5">
+            <motion.h2 variants={fadeUp} className="text-4xl xl:text-5xl font-extrabold text-white tracking-tight mb-5" style={{ fontFamily: FONT_DISPLAY }}>
               Une plateforme complète,<br />pensée pour le Cameroun
             </motion.h2>
             <motion.p variants={fadeUp} className="text-lg max-w-2xl mx-auto" style={{ color: "rgba(255,255,255,0.45)" }}>
@@ -798,7 +834,7 @@ export function LandingPage() {
               {
                 icon: <Sparkles size={20} />, title: "Assistant IA intégré",
                 desc: "Optimisez votre profil, analysez le marché et obtenez des recommandations personnalisées grâce à l'intelligence artificielle.",
-                accent: "#D4AF37",
+                accent: CM.gold,
               },
               {
                 icon: <Shield size={20} />, title: "Profils certifiés",
@@ -823,7 +859,7 @@ export function LandingPage() {
               {
                 icon: <Globe size={20} />, title: "Paiements adaptés au Cameroun",
                 desc: "Mobile Money, virement bancaire et paiements en XAF pour travailler simplement avec vos clients et talents.",
-                accent: "#1B7A43",
+                accent: CM.green,
               },
             ].map(f => (
               <FeatureCard key={f.title} {...f} />
@@ -833,7 +869,7 @@ export function LandingPage() {
       </section>
 
       {/* ── HOW IT WORKS ─────────────────────────────────────────────────── */}
-      <section id="how" className="py-28" style={{ background: "#F8FAFC" }}>
+      <section id="how" className="py-28" style={{ background: colors.bone }}>
         <div className="max-w-7xl mx-auto px-6">
           <motion.div
             initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }}
@@ -841,20 +877,19 @@ export function LandingPage() {
           >
             <motion.div variants={fadeUp}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-5"
-              style={{ background: "rgba(15,23,42,0.07)", border: "1px solid rgba(15,23,42,0.1)" }}>
-              <Clock size={11} style={{ color: "#0F172A" }} />
-              <span className="text-xs font-semibold" style={{ color: "#0F172A" }}>Simple & rapide</span>
+              style={{ background: "rgba(15,23,42,0.07)", border: "1px solid rgba(15,23,42,0.12)" }}>
+              <Clock size={11} style={{ color: colors.charcoal }} />
+              <span className="text-xs font-semibold" style={{ color: colors.charcoal }}>Simple & rapide</span>
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-4xl xl:text-5xl font-extrabold tracking-tight mb-5"
-              style={{ color: "#0F172A" }}>
+              style={{ color: colors.charcoal, fontFamily: FONT_DISPLAY }}>
               Comment ça fonctionne ?
             </motion.h2>
-            <motion.p variants={fadeUp} className="text-lg max-w-xl mx-auto" style={{ color: "#64748B" }}>
+            <motion.p variants={fadeUp} className="text-lg max-w-xl mx-auto" style={{ color: colors.muted }}>
               Démarrez en 5 minutes, trouvez votre premier projet ou talent dès aujourd'hui.
             </motion.p>
           </motion.div>
 
-          {/* Tab switcher */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -867,8 +902,8 @@ export function LandingPage() {
                 <button key={tab} onClick={() => setActiveTab(tab)}
                   className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300"
                   style={{
-                    background: activeTab === tab ? "#0F172A" : "transparent",
-                    color: activeTab === tab ? "#fff" : "#64748B",
+                    background: activeTab === tab ? colors.charcoal : "transparent",
+                    color: activeTab === tab ? "#fff" : colors.muted,
                     boxShadow: activeTab === tab ? "0 4px 16px rgba(15,23,42,0.25)" : "none",
                   }}>
                   {tab === "freelancer" ? "Je suis Freelancer" : "Je suis une Entreprise"}
@@ -907,14 +942,13 @@ export function LandingPage() {
               </AnimatePresence>
             </motion.div>
 
-            {/* Illustration panel */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
               className="relative rounded-3xl overflow-hidden"
-              style={{ background: "linear-gradient(135deg, #0F172A, #1E293B)", minHeight: 360, border: "1px solid rgba(255,255,255,0.06)" }}
+              style={{ background: `linear-gradient(135deg, ${colors.inkSoft}, #1E293B)`, minHeight: 360, border: "1px solid rgba(212,175,55,0.12)" }}
             >
               <div className="absolute inset-0 opacity-5"
                 style={{
@@ -923,17 +957,16 @@ export function LandingPage() {
                 }} />
 
               <div className="relative p-8 h-full flex flex-col justify-center gap-5">
-                <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "rgba(212,175,55,0.6)" }}>
+                <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "rgba(212,175,55,0.7)" }}>
                   {activeTab === "freelancer" ? "Votre espace freelancer" : "Votre espace recruteur"}
                 </p>
-                {/* Mini UI preview */}
                 <div className="space-y-3">
                   {(activeTab === "freelancer" ? [
-                    { label: "Profil complété", value: "85%", color: "#D4AF37", w: 85 },
+                    { label: "Profil complété", value: "85%", color: CM.gold, w: 85 },
                     { label: "Candidatures envoyées", value: "12", color: "#3B82F6", w: 70 },
                     { label: "Taux de réponse", value: "73%", color: "#22C55E", w: 73 },
                   ] : [
-                    { label: "Projets actifs", value: "5", color: "#D4AF37", w: 60 },
+                    { label: "Projets actifs", value: "5", color: CM.gold, w: 60 },
                     { label: "Candidatures reçues", value: "47", color: "#8B5CF6", w: 90 },
                     { label: "Budget utilisé", value: "62%", color: "#F59E0B", w: 62 },
                   ]).map(item => (
@@ -955,12 +988,11 @@ export function LandingPage() {
                     </div>
                   ))}
                 </div>
-                {/* CTA */}
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Link
                     to={activeTab === "freelancer" ? "/register/freelancer" : "/register/enterprise"}
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold mt-2"
-                    style={{ background: "linear-gradient(135deg, #D4AF37, #F0D060)", color: "#0F172A" }}>
+                    style={{ background: `linear-gradient(135deg, ${CM.ember}, ${CM.gold})`, color: colors.ink }}>
                     {activeTab === "freelancer" ? "Créer mon profil" : "Publier un projet"}
                     <ArrowRight size={14} />
                   </Link>
@@ -971,12 +1003,11 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Bande Toghu — transition entre fond clair et fond sombre */}
-      <ToghuStrip tone="light" />
+      <CeremonialBand tone="light" />
 
       {/* ── STATS ────────────────────────────────────────────────────────── */}
-      <section className="py-24 relative" style={{ background: "#080F1D" }}>
-        <NdopTexture opacity={0.03} />
+      <section className="py-24 relative" style={{ background: colors.ink }}>
+        <NdopTexture opacity={0.035} />
         <div className="max-w-7xl mx-auto px-6 relative">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -987,18 +1018,18 @@ export function LandingPage() {
           >
             <div className="flex items-center justify-center gap-2 mb-3">
               <RamSpiralIcon size={18} />
-              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#D4AF37" }}>
+              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: CM.gold }}>
                 Force du réseau
               </span>
             </div>
-            <h2 className="text-3xl font-extrabold text-white tracking-tight">
+            <h2 className="text-3xl font-extrabold text-white tracking-tight" style={{ fontFamily: FONT_DISPLAY }}>
               Des chiffres qui parlent d'eux-mêmes
             </h2>
           </motion.div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { value: 2400, suffix: "+", label: "Freelancers certifiés", icon: <Users size={22} />, color: "#D4AF37" },
+              { value: 2400, suffix: "+", label: "Freelancers certifiés", icon: <Users size={22} />, color: CM.gold },
               { value: 850, suffix: "+", label: "Entreprises clientes", icon: <Briefcase size={22} />, color: "#3B82F6" },
               { value: 15, prefix: "", suffix: "M+ XOF", label: "Versés aux freelancers", icon: <CreditCard size={22} />, color: "#22C55E" },
               { value: 98, suffix: "%", label: "Taux de satisfaction", icon: <Star size={22} />, color: "#F59E0B" },
@@ -1011,7 +1042,7 @@ export function LandingPage() {
                 transition={{ duration: 0.55, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
                 whileHover={{ y: -4 }}
                 className="p-8 rounded-2xl text-center relative overflow-hidden"
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(212,175,55,0.1)" }}
               >
                 <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-300"
                   style={{ background: `radial-gradient(circle at 50% 0%, ${stat.color}10, transparent 60%)` }} />
@@ -1020,7 +1051,7 @@ export function LandingPage() {
                     style={{ background: `${stat.color}15`, color: stat.color }}>
                     {stat.icon}
                   </div>
-                  <p className="text-4xl font-extrabold tracking-tight mb-2" style={{ color: stat.color }}>
+                  <p className="text-4xl font-extrabold tracking-tight mb-2" style={{ color: stat.color, fontFamily: FONT_DISPLAY }}>
                     <Counter value={stat.value} suffix={stat.suffix} prefix={stat.prefix || ""} />
                   </p>
                   <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>{stat.label}</p>
@@ -1032,7 +1063,7 @@ export function LandingPage() {
       </section>
 
       {/* ── TESTIMONIALS ─────────────────────────────────────────────────── */}
-      <section id="testimonials" className="py-28" style={{ background: "#F8FAFC" }}>
+      <section id="testimonials" className="py-28" style={{ background: colors.bone }}>
         <div className="max-w-7xl mx-auto px-6">
           <motion.div
             initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }}
@@ -1040,12 +1071,12 @@ export function LandingPage() {
           >
             <motion.div variants={fadeUp}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-5"
-              style={{ background: "rgba(212,175,55,0.12)", border: "1px solid rgba(212,175,55,0.2)" }}>
-              <Star size={11} fill="#D4AF37" style={{ color: "#D4AF37" }} />
-              <span className="text-xs font-semibold" style={{ color: "#0F172A" }}>Ils nous font confiance</span>
+              style={{ background: "rgba(212,175,55,0.12)", border: "1px solid rgba(212,175,55,0.24)" }}>
+              <Star size={11} fill={CM.gold} style={{ color: CM.gold }} />
+              <span className="text-xs font-semibold" style={{ color: colors.charcoal }}>Ils nous font confiance</span>
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-4xl xl:text-5xl font-extrabold tracking-tight"
-              style={{ color: "#0F172A" }}>
+              style={{ color: colors.charcoal, fontFamily: FONT_DISPLAY }}>
               Ce que disent nos utilisateurs
             </motion.h2>
           </motion.div>
@@ -1080,26 +1111,25 @@ export function LandingPage() {
       </section>
 
       {/* ── DUAL CTA ─────────────────────────────────────────────────────── */}
-      <section className="py-24" style={{ background: "#080F1D" }}>
+      <section className="py-24" style={{ background: colors.ink }}>
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Freelancer CTA */}
             <motion.div
               initial={{ opacity: 0, y: 24, x: -20 }}
               whileInView={{ opacity: 1, y: 0, x: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
               className="relative p-10 rounded-3xl overflow-hidden"
-              style={{ background: "linear-gradient(135deg, #0F172A, #1E293B)", border: "1px solid rgba(255,255,255,0.08)" }}
+              style={{ background: `linear-gradient(135deg, ${colors.inkSoft}, #1E293B)`, border: "1px solid rgba(212,175,55,0.14)" }}
             >
               <div className="absolute top-0 right-0 w-64 h-64 opacity-10"
-                style={{ background: "radial-gradient(circle, #D4AF37, transparent 70%)" }} />
+                style={{ background: `radial-gradient(circle, ${CM.ember}, transparent 70%)` }} />
               <div className="relative">
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6"
-                  style={{ background: "rgba(212,175,55,0.15)", color: "#D4AF37" }}>
+                  style={{ background: "rgba(212,175,55,0.18)", color: CM.gold }}>
                   <Users size={22} />
                 </div>
-                <h3 className="text-2xl font-extrabold text-white mb-3">Pour les freelancers</h3>
+                <h3 className="text-2xl font-extrabold text-white mb-3" style={{ fontFamily: FONT_DISPLAY }}>Pour les freelancers</h3>
                 <p className="text-sm leading-relaxed mb-8" style={{ color: "rgba(255,255,255,0.5)" }}>
                   Créez votre profil certifié, accédez à des projets au Cameroun et soyez payé en toute sécurité. Rejoignez une communauté de freelancers en pleine croissance.
                 </p>
@@ -1113,44 +1143,43 @@ export function LandingPage() {
                 <motion.div whileHover={{ scale: 1.03, y: -1 }} whileTap={{ scale: 0.97 }}>
                   <Link to="/register/freelancer"
                     className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold"
-                    style={{ background: "linear-gradient(135deg, #D4AF37, #F0D060)", color: "#0F172A" }}>
+                    style={{ background: `linear-gradient(135deg, ${CM.ember}, ${CM.gold})`, color: colors.ink }}>
                     Créer mon profil gratuitement <ArrowRight size={14} />
                   </Link>
                 </motion.div>
               </div>
             </motion.div>
 
-            {/* Enterprise CTA */}
             <motion.div
               initial={{ opacity: 0, y: 24, x: 20 }}
               whileInView={{ opacity: 1, y: 0, x: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.65, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
               className="relative p-10 rounded-3xl overflow-hidden"
-              style={{ background: "linear-gradient(135deg, #1A1200, #2D1E00)", border: "1px solid rgba(212,175,55,0.2)" }}
+              style={{ background: "linear-gradient(135deg, #1A1200, #2D1E00)", border: "1px solid rgba(212,175,55,0.22)" }}
             >
               <div className="absolute top-0 right-0 w-64 h-64 opacity-15"
-                style={{ background: "radial-gradient(circle, #F0D060, transparent 70%)" }} />
+                style={{ background: `radial-gradient(circle, ${CM.gold}, transparent 70%)` }} />
               <div className="relative">
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6"
-                  style={{ background: "rgba(212,175,55,0.2)", color: "#D4AF37" }}>
+                  style={{ background: "rgba(212,175,55,0.2)", color: CM.gold }}>
                   <Briefcase size={22} />
                 </div>
-                <h3 className="text-2xl font-extrabold mb-3" style={{ color: "#F0D060" }}>Pour les entreprises</h3>
-                <p className="text-sm leading-relaxed mb-8" style={{ color: "rgba(240,208,96,0.55)" }}>
+                <h3 className="text-2xl font-extrabold mb-3" style={{ color: CM.gold, fontFamily: FONT_DISPLAY }}>Pour les entreprises</h3>
+                <p className="text-sm leading-relaxed mb-8" style={{ color: "rgba(212,175,55,0.6)" }}>
                   Accédez à un vivier de talents camerounais certifiés. Publiez votre projet et recevez des candidatures qualifiées en 24h.
                 </p>
                 <ul className="space-y-2 mb-8">
                   {["Publication de projet gratuite", "Talents certifiés et vérifiés", "IA de recommandation incluse", "Gestion centralisée RH"].map(item => (
-                    <li key={item} className="flex items-center gap-2 text-sm" style={{ color: "rgba(240,208,96,0.75)" }}>
-                      <CheckCircle size={14} style={{ color: "#D4AF37" }} /> {item}
+                    <li key={item} className="flex items-center gap-2 text-sm" style={{ color: "rgba(212,175,55,0.8)" }}>
+                      <CheckCircle size={14} style={{ color: CM.gold }} /> {item}
                     </li>
                   ))}
                 </ul>
                 <motion.div whileHover={{ scale: 1.03, y: -1 }} whileTap={{ scale: 0.97 }}>
                   <Link to="/register/enterprise"
                     className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold"
-                    style={{ background: "rgba(212,175,55,0.15)", color: "#F0D060", border: "1px solid rgba(212,175,55,0.3)" }}>
+                    style={{ background: "rgba(212,175,55,0.16)", color: CM.gold, border: "1px solid rgba(212,175,55,0.32)" }}>
                     Recruter maintenant <ArrowRight size={14} />
                   </Link>
                 </motion.div>
@@ -1161,13 +1190,13 @@ export function LandingPage() {
       </section>
 
       {/* ── FINAL CTA ────────────────────────────────────────────────────── */}
-      <section className="py-28 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0D1829, #0F172A)" }}>
+      <section className="py-28 relative overflow-hidden" style={{ background: `linear-gradient(135deg, #0D1829, ${colors.inkSoft})` }}>
         <div className="absolute inset-0 pointer-events-none">
           <motion.div
             animate={{ rotate: [0, 360] }}
             transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-5"
-            style={{ background: "conic-gradient(from 0deg, #D4AF37, transparent, #D4AF37)" }}
+            style={{ background: `conic-gradient(from 0deg, ${CM.ember}, transparent, ${CM.gold})` }}
           />
         </div>
         <motion.div
@@ -1176,10 +1205,10 @@ export function LandingPage() {
           className="max-w-3xl mx-auto px-6 text-center relative z-10"
         >
           <motion.p variants={fadeUp} className="text-sm font-semibold uppercase tracking-widest mb-5"
-            style={{ color: "#D4AF37" }}>
+            style={{ color: CM.gold }}>
             Construisons le freelancing camerounais
           </motion.p>
-          <motion.h2 variants={fadeUp} className="text-4xl xl:text-5xl font-extrabold text-white tracking-tight mb-6">
+          <motion.h2 variants={fadeUp} className="text-4xl xl:text-5xl font-extrabold text-white tracking-tight mb-6" style={{ fontFamily: FONT_DISPLAY }}>
             Prêt à transformer votre carrière ou votre recrutement ?
           </motion.h2>
           <motion.p variants={fadeUp} className="text-lg mb-12" style={{ color: "rgba(255,255,255,0.45)" }}>
@@ -1189,7 +1218,7 @@ export function LandingPage() {
             <motion.div whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}>
               <Link to="/register/freelancer"
                 className="flex items-center gap-2 px-8 py-4 rounded-xl text-base font-semibold"
-                style={{ background: "linear-gradient(135deg, #D4AF37, #F0D060)", color: "#0F172A" }}>
+                style={{ background: `linear-gradient(135deg, ${CM.ember}, ${CM.gold})`, color: colors.ink }}>
                 Commencer gratuitement <ArrowRight size={16} />
               </Link>
             </motion.div>
@@ -1204,22 +1233,17 @@ export function LandingPage() {
         </motion.div>
       </section>
 
-      {/* Bande Toghu — signature finale avant le footer */}
-      <ToghuStrip tone="dark" />
+      <CeremonialBand tone="dark" />
 
       {/* ── FOOTER ───────────────────────────────────────────────────────── */}
-      <footer style={{ background: "#050A14", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+      <footer style={{ background: "#050A14", borderTop: "1px solid rgba(212,175,55,0.1)" }}>
         <div className="max-w-7xl mx-auto px-6 py-16">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-10 mb-12">
-            {/* Brand */}
             <div className="col-span-2 md:col-span-2">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg, #D4AF37, #F0D060)" }}>
-                  <span className="text-xs font-bold" style={{ color: "#0F172A" }}>FK</span>
-                </div>
-                <span className="text-base font-bold text-white">
-                  free<span style={{ color: "#D4AF37" }}>-kaolo</span>
+              <div className="flex items-center gap-2 mb-4">
+                <img src="/assets/logo-freekaolo-badge.png" alt="free-kaolo" className="w-10 h-10 object-contain" />
+                <span className="text-base font-bold text-white" style={{ fontFamily: FONT_DISPLAY }}>
+                  free<span style={{ color: CM.gold }}>-kaolo</span>
                 </span>
               </div>
               <p className="text-sm leading-relaxed mb-6" style={{ color: "rgba(255,255,255,0.35)" }}>
@@ -1231,7 +1255,6 @@ export function LandingPage() {
               </div>
             </div>
 
-            {/* Links */}
             {[
               {
                 title: "Plateforme",
@@ -1268,7 +1291,7 @@ export function LandingPage() {
           </div>
 
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-8 border-t"
-            style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            style={{ borderColor: "rgba(212,175,55,0.1)" }}>
             <p className="text-xs" style={{ color: "rgba(255,255,255,0.25)" }}>
               © 2026 free-kaolo. Tous droits réservés.
             </p>

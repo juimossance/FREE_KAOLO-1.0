@@ -35,7 +35,7 @@ public class UserService {
     private final entrepriseRepository ent;
 
 
-    public User registerPrestataire(String nom, String prenom, String email, String password, String phone, String pays, String specialite, List<Competence> competence, String description , String Experience) {
+    public User registerPrestataire(String nom, String prenom, String email, String password, String phone) {
          //verifier avant de creer
         if(userRepository.findByEmail(email).isPresent()){
              throw new RuntimeException("Email deja utilisé");
@@ -58,11 +58,8 @@ public class UserService {
                p.setUser(u);
                p.setNom(nom);
                p.setPrenom(prenom);
-               p.setSpecialite(specialite);
-               p.setExperience(Experience);
-               p.setCompetence(competence);
-               p.setDescription(description);
-               p.setPays(pays);
+
+
 
         prest.save(p);
         return u;

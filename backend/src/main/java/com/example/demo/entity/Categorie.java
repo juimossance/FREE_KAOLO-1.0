@@ -17,9 +17,6 @@ public class Categorie {
     @Column(nullable = false)
     private String metier; // ex: "Community Management" (regroupement métier)
 
-    @OneToMany(mappedBy = "categorie", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Question> questions;
-
     public Categorie() {
     }
 
@@ -38,7 +35,4 @@ public class Categorie {
 
     public String getMetier() { return metier; }
     public void setMetier(String metier) { this.metier = metier; }
-
-    public List<Question> getQuestions() { return questions; }
-    public void setQuestions(List<Question> questions) { this.questions = questions; }
 }

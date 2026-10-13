@@ -22,7 +22,7 @@ public class Candidaturedto {
     private String freelancerSpecialite;
     private Double freelancerRating;
     private Integer freelancerNbAvis;
-    private List<Competence> freelancerCompetences;
+    private List<String> freelancerCompetences;
 
     private Double montantFinal;
     private String commentaireEntreprise;
@@ -135,11 +135,11 @@ public class Candidaturedto {
         this.freelancerNbAvis = freelancerNbAvis;
     }
 
-    public List<Competence> getFreelancerCompetences() {
+    public List<String> getFreelancerCompetences() {
         return freelancerCompetences;
     }
 
-    public void setFreelancerCompetences(List<Competence> freelancerCompetences) {
+    public void setFreelancerCompetences(List<String> freelancerCompetences) {
         this.freelancerCompetences = freelancerCompetences;
     }
 

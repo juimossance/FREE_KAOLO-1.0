@@ -26,7 +26,10 @@ public class ProjetDto {
     private List<String> competences;
     private Long entrepriseId;
     private String entrepriseNom;
+    private boolean dejaPostule;
 
+    public boolean isDejaPostule() { return dejaPostule; }
+    public void setDejaPostule(boolean dejaPostule) { this.dejaPostule = dejaPostule; }
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getTitre() { return titre; }

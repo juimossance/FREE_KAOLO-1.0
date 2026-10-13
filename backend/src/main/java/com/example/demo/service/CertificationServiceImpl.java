@@ -1,9 +1,9 @@
 package com.example.demo.service;
 
-
 import com.example.demo.Dto.CertificationDTO;
 import com.example.demo.Dto.CertificationFormDTO;
 import com.example.demo.Enum.CertStatus;
+import com.example.demo.Enum.CertType;
 import com.example.demo.entity.Certification;
 import com.example.demo.exception.CertificationNotFoundException;
 import com.example.demo.exception.InvalidCertificationStateException;
@@ -11,6 +11,8 @@ import com.example.demo.repository.CertificationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -34,14 +36,17 @@ public class CertificationServiceImpl implements Certificationservice {
     @Override
     @Transactional
     public CertificationDTO create(Long freelancerId, CertificationFormDTO form) {
+        CertType type = form.getType() != null ? form.getType() : CertType.CERTIFICATION;
+
         Certification entity = new Certification(
+                type,
                 freelancerId,
                 form.getNom(),
                 form.getOrganisme(),
                 form.getCredentialId(),
                 form.getCategorie(),
                 form.getDateObtention(),
-                form.getDateExpiration(),
+                expirationFor(type, form.getDateExpiration()),
                 form.getDocumentUrl()
         );
         return CertificationDTO.from(repository.save(entity));
@@ -59,15 +64,20 @@ public class CertificationServiceImpl implements Certificationservice {
             );
         }
 
+        // Le type reste celui de l'entité : on ne transforme pas un diplôme en certification
+        CertType type = entity.getType();
+
         entity.setNom(form.getNom());
         entity.setOrganisme(form.getOrganisme());
         entity.setCredentialId(form.getCredentialId());
         entity.setCategorie(form.getCategorie());
         entity.setDateObtention(form.getDateObtention());
-        entity.setDateExpiration(form.getDateExpiration());
+        entity.setDateExpiration(expirationFor(type, form.getDateExpiration()));
         entity.setDocumentUrl(form.getDocumentUrl());
         entity.setStatus(CertStatus.EN_ATTENTE);
         entity.setMotifRejet(null);
+        entity.setDateDecision(null);
+        entity.setDateDecision(LocalDateTime.now());
 
         return CertificationDTO.from(repository.save(entity));
     }
@@ -79,5 +89,10 @@ public class CertificationServiceImpl implements Certificationservice {
             throw new CertificationNotFoundException(id);
         }
         repository.deleteById(id);
+    }
+
+    // Un diplôme n'expire jamais
+    private LocalDate expirationFor(CertType type, LocalDate requested) {
+        return type == CertType.DIPLOME ? null : requested;
     }
 }

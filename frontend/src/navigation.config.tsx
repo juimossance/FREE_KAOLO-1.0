@@ -19,6 +19,7 @@ import {
   Users,
   ArrowRight,
   ShieldCheck,
+  TrendingUp,
 } from "lucide-react";
 
 /* ============================================================
@@ -114,17 +115,23 @@ export const ROLE_NAVIGATION: Readonly<Record<AppRole, readonly NavItem[]>> = {
           description: "Projets terminés",
         },
         {
-          label: "Évaluations",
+          label: "Avis ",
           path: "/freelancer/ratings",
           icon: <Star size={15} />,
           description: "Avis et notes clients",
+        },   {
+          label: "Évaluations",
+          path: "/freelancer/evaluate",
+          icon: <Star size={15} />,
+          description: "evaluation des competences ",
         },
+       
       ],
     },
 
     {
       label: "Paiements",
-      path: "/freelancer/payments",
+      path: "/payments",
     },
 
     {
@@ -165,6 +172,7 @@ export const ROLE_NAVIGATION: Readonly<Record<AppRole, readonly NavItem[]>> = {
           icon: <FileText size={15} />,
           description: "Gérer les postulations",
         },
+        
       ],
     },
 
@@ -182,6 +190,12 @@ export const ROLE_NAVIGATION: Readonly<Record<AppRole, readonly NavItem[]>> = {
           path: "/enterprise/candidates",
           icon: <Users size={15} />,
           description: "Vos candidats sélectionnés",
+        },
+          {
+          label: "Évaluer",
+          path: "/enterprise/R",
+          icon: <Users size={15} />,
+          description: "Évaluer les compétences des freelancers",
         },
         {
           label: "Historique",

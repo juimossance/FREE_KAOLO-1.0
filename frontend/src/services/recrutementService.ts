@@ -4,6 +4,7 @@ import { apiFetch } from "./http";
 export interface Recruitment {
   id: number;
   candidatureId: number;
+  projetId: number;
   projetTitre: string;
   projetCategorie: string;
   freelancerNom: string;

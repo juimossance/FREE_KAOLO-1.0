@@ -14,7 +14,10 @@ public interface ProjetRepository extends JpaRepository<Projet,Long> {
     Optional<Projet> findById(Long projetId);
     // Projets d'une entreprise
     List<Projet> findByEntrepriseIdOrderByDatePublicationDesc(Long entrepriseId);
-
+    Optional<Projet> findByTitreAndEntreprise_Id(
+            String titre,
+            Long entrepriseId
+    );
     // Recherche par titre
     List<Projet> findByTitreContainingIgnoreCase(String search);
 

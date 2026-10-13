@@ -5,32 +5,68 @@
 // j'ajuste les deux fichiers ensemble.
 import { apiFetch } from "./http";
 
-export type CertStatus = "EN_ATTENTE" | "VALIDEE" | "REJETEE";
+export type CertType = "CERTIFICATION" | "DIPLOME";
+
+export type CertStatus =
+  | "VALIDEE"
+  | "EN_ATTENTE"
+  | "REJETEE";
 
 export interface CertificationItem {
   id: number;
+
+  type: CertType;
+
   nom: string;
   organisme: string;
   credentialId: string;
   categorie: string;
-  dateObtention: string;   // format ISO "YYYY-MM-DD"
+
+  dateObtention: string;
   dateExpiration: string | null;
+
   documentUrl: string;
+
   status: CertStatus;
-  motifRejet: string | null;
+  motifRejet?: string | null;
 }
 
 export interface CertificationFormData {
+  type: CertType;
+
   nom: string;
   organisme: string;
   credentialId: string;
   categorie: string;
-  dateObtention: string;   // format ISO "YYYY-MM-DD"
+
+  dateObtention: string;
   dateExpiration: string | null;
+
   documentUrl: string;
 }
-
+export interface AdminCertificationItem extends CertificationItem {
+  freelancerId: number;
+  freelancerNom: string;
+  freelancerEmail: string;
+  dateSoumission: string;
+}
 export const certificationService = {
+    admin: {
+    list(status?: CertStatus): Promise<AdminCertificationItem[]> {
+      const qs = status ? `?status=${status}` : "";
+      return apiFetch<AdminCertificationItem[]>(`/admin/certifications${qs}`);
+    },
+    validate(id: number): Promise<AdminCertificationItem> {
+      return apiFetch<AdminCertificationItem>(`/admin/certifications/${id}/validate`, { method: "PUT" });
+    },
+    reject(id: number, motif: string): Promise<AdminCertificationItem> {
+      return apiFetch<AdminCertificationItem>(`/admin/certifications/${id}/reject`, {
+        method: "PUT",
+        body: JSON.stringify({ motif }),
+      });
+    },
+  },
+  
    async getAll(freelancerId: number): Promise<CertificationItem[]> {
     return apiFetch<CertificationItem[]>(`/freelancers/${freelancerId}/certifications`);
   },
@@ -65,4 +101,21 @@ export const certificationService = {
       body: formData,
     });
   },
+};
+export const isCredentialValid = (c: CertificationItem): boolean =>
+  c.status === "VALIDEE" &&
+  (!c.dateExpiration || new Date(c.dateExpiration) >= new Date(new Date().toDateString()));
+  const API_BASE_URL = "http://localhost:8080";
+
+export const getCertificationDocumentUrl = (documentUrl: string): string => {
+  if (!documentUrl) return "";
+
+  if (
+    documentUrl.startsWith("http://") ||
+    documentUrl.startsWith("https://")
+  ) {
+    return documentUrl;
+  }
+
+  return `${API_BASE_URL}${documentUrl.startsWith("/") ? "" : "/"}${documentUrl}`;
 };

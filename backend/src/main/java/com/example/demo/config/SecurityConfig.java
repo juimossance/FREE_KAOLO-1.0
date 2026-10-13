@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -16,13 +17,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(
-            JwtAuthenticationFilter jwtAuthenticationFilter
-    ) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
@@ -41,40 +41,25 @@ public class SecurityConfig {
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
-
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry
-                        .addMapping("/**")
+                registry.addMapping("/**")
                         .allowedOrigins("http://localhost:5173")
-                        .allowedMethods(
-                                "GET",
-                                "POST",
-                                "PUT",
-                                "DELETE",
-                                "OPTIONS"
-                        )
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*");
             }
         };
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http
-    ) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
                 .csrf(csrf -> csrf.disable())
-
                 .cors(cors -> {})
-
                 .authorizeHttpRequests(auth -> auth
 
-                        // =========================
-                        // AUTHENTIFICATION PUBLIQUE
-                        // =========================
-
+                        // public
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/register",
@@ -82,135 +67,63 @@ public class SecurityConfig {
                                 "/api/auth/register/prestataire",
                                 "/api/auth/register/entreprise"
                         ).permitAll()
-
-                        // =========================
-                        // AUTH
-                        // =========================
-
-                        .requestMatchers(
-                                "/api/auth/me"
-                        ).authenticated()
-
-                        // =========================
-                        // FREELANCER
-                        // =========================
-
-                        // Routes personnelles
-                        .requestMatchers(
-                                "/api/freelancer/me/**"
-                        ).hasRole("FREELANCER")
-
-                        // Profil public consulté par une entreprise
+                        .requestMatchers("/error", "/uploads/**").permitAll()
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/api/freelancer/*/detail"
-                        ).hasRole("ENTREPRISE")
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/freelancer"
-                        ).hasRole("ENTREPRISE")
+                                "/api/ai/test-groq-dns",
+                                "/api/ai/test-groq-https",
+                                "/api/ai/test-groq-post",
+                                "/api/ai/test-java-proxy",
+                                "/api/ai/test-network"
+                        ).permitAll()
 
-                        // Portfolio public
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/freelancer/*/portfolio"
-                        ).authenticated()
+                        .requestMatchers("/api/auth/me").authenticated()
 
-                        // Autres routes freelancer
-                        .requestMatchers(
-                                "/api/freelancer/**"
-                        ).hasRole("FREELANCER")
+                        // avis : déplacé avant /api/freelancer/** sinon l'entreprise est bloquée
+                        .requestMatchers(HttpMethod.GET, "/api/freelancer/candidatures/*/avis")
+                        .hasAnyRole("ENTREPRISE", "FREELANCER")
 
-                        // =========================
-                        // ENTREPRISE
-                        // =========================
+                        // freelancer
+                        .requestMatchers("/api/freelancer/me/**").hasRole("FREELANCER")
+                        .requestMatchers(HttpMethod.GET, "/api/freelancer/*/detail").hasRole("ENTREPRISE")
+                        .requestMatchers(HttpMethod.GET, "/api/freelancer").hasRole("ENTREPRISE")
+                        .requestMatchers(HttpMethod.GET, "/api/freelancer/*/portfolio").authenticated()
+                        .requestMatchers("/api/freelancer/**").hasRole("FREELANCER")
 
-                        .requestMatchers(
-                                "/api/entreprise/me/**"
-                        ).hasRole("ENTREPRISE")
+                        // cv (pluriel)
+                        .requestMatchers(HttpMethod.GET, "/api/freelancers/*/cv").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/freelancers/*/cv").hasRole("FREELANCER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/freelancers/*/cv").hasRole("FREELANCER")
 
-                        .requestMatchers(
-                                "/api/entreprise/**"
-                        ).hasRole("ENTREPRISE")
+                        // entreprise
+                        .requestMatchers("/api/entreprise/**").hasRole("ENTREPRISE")
 
-                        // =========================
-                        // PROJETS
-                        // =========================
+                        // projets
+                        .requestMatchers(HttpMethod.GET, "/api/projets").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/projets/me").hasRole("ENTREPRISE")
+                        .requestMatchers(HttpMethod.GET, "/api/projets/publics").hasRole("FREELANCER")
+                        .requestMatchers(HttpMethod.POST, "/api/projets/candidatures/confirmer").hasRole("ENTREPRISE")
+                        .requestMatchers(HttpMethod.GET, "/api/projets/*/avancement").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/projets/*/avancement").hasRole("FREELANCER")
+                        .requestMatchers("/api/projets/**").hasRole("ENTREPRISE")
 
-                        // Liste publique des projets
-                        // pour utilisateurs connectés
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/projets"
-                        ).authenticated()
+                        // ia et conversations
+                        .requestMatchers("/api/ai/**").authenticated()
+                        .requestMatchers("/api/conversations/**").authenticated()
 
-                        // Mes projets entreprise
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/projets/me"
-                        ).hasRole("ENTREPRISE")
+                        // paiements
+                        .requestMatchers(HttpMethod.POST, "/api/paiements/depot").hasRole("ENTREPRISE")
+                        .requestMatchers(HttpMethod.POST, "/api/paiements/*/liberer").hasRole("ENTREPRISE")
+                        .requestMatchers(HttpMethod.POST, "/api/paiements/retrait").hasRole("FREELANCER")
+                        .requestMatchers(HttpMethod.GET, "/api/paiements/solde").hasRole("FREELANCER")
+                        .requestMatchers("/api/paiements/**").authenticated()
 
-                        // Confirmation sélection candidats
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/projets/candidatures/confirmer"
-                        ).hasRole("ENTREPRISE")
-
-                        // Autres opérations projets
-                        .requestMatchers(
-                                "/api/projets/**"
-                        ).hasRole("ENTREPRISE")
-
-                        // =========================
-                        // IA
-                        // =========================
-
-                        .requestMatchers(
-                                "/api/ai/**"
-                        ).authenticated()
-                        .requestMatchers(
-                                "/api/conversations/**"
-                        ).authenticated()
-
-
-                        // =========================
-                        // PAIEMENTS
-                        // =========================
-
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/paiements/initier"
-                        ).hasRole("ENTREPRISE")
-
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/paiements/valider/**"
-                        ).hasRole("ENTREPRISE")
-
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/paiements/retrait/**"
-                        ).hasRole("FREELANCER")
-
-                        .requestMatchers(
-                                "/api/paiements/**"
-                        ).authenticated()
-
-                        // =========================
-                        // DASHBOARD
-                        // =========================
-
-                        .requestMatchers(
-                                "/api/dashboard/freelancer/**"
-                        ).hasRole("FREELANCER")
-
-                        // =========================
-                        // PAR DÉFAUT
-                        // =========================
+                        // dashboard et admin
+                        .requestMatchers("/api/dashboard/freelancer/**").hasRole("FREELANCER")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
 
                         .anyRequest().authenticated()
                 )
-
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable());
 

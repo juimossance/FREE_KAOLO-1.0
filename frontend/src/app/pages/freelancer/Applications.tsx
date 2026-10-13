@@ -1,12 +1,13 @@
 // src/app/pages/freelancer/Applications.tsx
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo} from "react";
 import { Clock, CheckCircle, XCircle, Eye, MessageSquare,
-         Building2, Calendar, DollarSign, Search, Loader2 } from "lucide-react";
+         Building2, Calendar, DollarSign, Search, Loader2 ,TrendingUp} from "lucide-react";
 import { useAuth } from "../../../hooks/useAuth";
 import {
   candidatureFreelancerService,
   type CandidatureFreelancer,
 } from "../../../services/candidatureFreelancerService";
+import { useNavigate } from "react-router";
 
 // ── Types & config ────────────────────────────────────────────────────────────
 
@@ -42,7 +43,7 @@ const formatDate = (d?: string) =>
 export function Applications() {
   const { user } = useAuth();
   const freelancerId = user?.freelancerId;
-
+const navigate = useNavigate();
   const [candidatures, setCandidatures] = useState<CandidatureFreelancer[]>([]);
   const [loading,      setLoading]      = useState(true);
   const [error,        setError]        = useState<string | null>(null);
@@ -278,6 +279,16 @@ export function Applications() {
                             Retirer la candidature
                           </button>
                         )}
+                        {app.status === "EN_COURS" && (
+  <button
+    onClick={() => navigate(`/freelancer/projects/${app.projetId}/progress`)}
+    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium"
+    style={{ background: "#EFF6FF", color: "#1D4ED8" }}
+  >
+    <TrendingUp size={14} />
+    Mettre à jour l'avancement
+  </button>
+)}
                       </div>
                     </div>
                   </div>

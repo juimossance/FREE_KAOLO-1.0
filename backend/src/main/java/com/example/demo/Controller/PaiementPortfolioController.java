@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/freelancer-paiement ")
+@RequestMapping("/api/freelancer-paiement")
 @CrossOrigin(origins = "http://localhost:5173")
 public class PaiementPortfolioController {
 

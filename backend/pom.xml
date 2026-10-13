@@ -30,6 +30,22 @@
 		<spring-modulith.version>2.1.0</spring-modulith.version>
 	</properties>
 	<dependencies>
+		<!-- Dans votre pom.xml, section <dependencies> -->
+
+		<!-- Lecture ET génération de PDF -->
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>3.0.3</version>
+		</dependency>
+
+		<!-- Lecture de fichiers .docx (CV importés au format Word) -->
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>5.3.0</version>
+		</dependency>
+
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-api</artifactId>
@@ -39,6 +55,7 @@
 			<groupId>org.hibernate.validator</groupId>
 			<artifactId>hibernate-validator</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-impl</artifactId>

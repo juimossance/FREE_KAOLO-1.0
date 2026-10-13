@@ -5,6 +5,7 @@ import com.example.demo.entity.Competence;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class freelancerDto {
@@ -32,14 +33,14 @@ public class freelancerDto {
     private String specialite;
     private String experience;
     private String description;
-    private List<Competence> competence;
+    private List<String> competence;
     private Role role = Role.FREELANCER;
 
     private String pays;
     public freelancerDto() {}
 
     public freelancerDto(Long id, String nom, String prenom, String specialite,
-                              String pays, List<Competence> competence) {
+                              String pays, List<String> competence) {
         this.id = id;
         this.nom = nom;
         this.prenom = prenom;
@@ -75,13 +76,17 @@ public class freelancerDto {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
-    public List<Competence> getCompetence() { return competence; }
-    public void setCompetence(List<Competence> competence) { this.competence = competence; }
+    public List<String> getCompetence() { return competence; }
+    public void setCompetence(List<String> competence) { this.competence = competence; }
     public String getPays() {
         return pays;
     }
-
     public void setPays(String pays) {
         this.pays = pays;
     }
-}
+    public record CvResponse(
+            Long id,
+            String fileName,
+            String message,
+            LocalDateTime uploadedAt
+    ) {}}

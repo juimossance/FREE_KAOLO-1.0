@@ -17,7 +17,11 @@ public class Entreprise {
     private boolean Enabled = true;
     private  String  siteweb;
     private  String  adresse;
+    @Transient
+    private boolean certifie;
 
+    public boolean isCertifie() { return certifie; }
+    public void setCertifie(boolean certifie) { this.certifie = certifie; }
     public String getAdresse() {
         return adresse;
     }

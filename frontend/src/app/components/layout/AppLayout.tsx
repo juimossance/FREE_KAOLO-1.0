@@ -1,4 +1,3 @@
-
 // src/components/layout/AppLayout.tsx
 
 import { Outlet, useLocation } from "react-router";
@@ -10,6 +9,53 @@ import {
 } from "lucide-react";
 
 import { Navbar } from "./Navbar";
+
+// ─── Palette (identique au reste de l'app) ──────────────────────────────────
+const CM = {
+  ember: "#D4AF37",
+  gold: "#F0D060",
+  clay: "#8A6D1F",
+};
+
+// ─── Filigrane Ndop, watermark très discret derrière le header secondaire ──
+function NdopTexture({ opacity = 0.025 }: { opacity?: number }) {
+  return (
+    <svg aria-hidden="true" className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity }}>
+      <defs>
+        <pattern id="ndop-applayout" width="56" height="56" patternUnits="userSpaceOnUse">
+          <path d="M28 4 L52 28 L28 52 L4 28 Z" fill="none" stroke={CM.ember} strokeWidth="1" />
+          <path d="M28 16 L40 28 L28 40 L16 28 Z" fill="none" stroke={CM.ember} strokeWidth="1" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#ndop-applayout)" />
+    </svg>
+  );
+}
+
+// ─── Ligne-motif (version compacte de la bande cérémonielle de la landing) ──
+function MotifLine() {
+  const dots = Array.from({ length: 60 });
+  return (
+    <div aria-hidden="true" className="w-full overflow-hidden leading-none" style={{ background: "#F1F5F9" }}>
+      <svg viewBox="0 0 1200 6" preserveAspectRatio="none" className="w-full h-[4px] block">
+        {dots.map((_, i) => {
+          const x = 6 + i * 20;
+          const fill = i % 3 === 0 ? CM.ember : i % 3 === 1 ? CM.gold : CM.clay;
+          return (
+            <circle
+              key={i}
+              cx={x}
+              cy={3}
+              r={i % 4 === 0 ? 2 : 1.2}
+              fill={fill}
+              opacity={i % 4 === 0 ? 0.85 : 0.4}
+            />
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
 
 /**
  * ============================================================
@@ -27,7 +73,7 @@ const pageTitles: Record<string, string> = {
   "/freelancer/projects": "Historique des projets",
   "/freelancer/applications": "Candidatures envoyées",
   "/freelancer/ratings": "Évaluations & notes",
-  "/freelancer/payments": "Paiements reçus",
+  
   "/freelancer/notifications": "Notifications",
 
   "/enterprise/dashboard": "Tableau de bord",
@@ -37,6 +83,7 @@ const pageTitles: Record<string, string> = {
   "/enterprise/applications": "Gestion des candidatures",
   "/enterprise/candidates": "Sélection des candidats",
   "/enterprise/history": "Historique des recrutements",
+  "/enterprise/Ratefreelancers": "Évaluation des freelances",
 
   "/messages": "Messagerie",
   "/ai": "Assistant IA",
@@ -126,24 +173,23 @@ export function AppLayout() {
 
   return (
    <div
-      className="h-screen flex flex-col overflow-hidden" // ⬅️ min-h-screen → h-screen + overflow-hidden
+      className="h-screen flex flex-col overflow-hidden"
       style={{ background: "#F7F8FA", color: "#07111D" }}
     >
       <Navbar />
 
-      <div className="flex flex-1 min-h-0 flex-col pt-16"> {/* ⬅️ min-h-screen → flex-1 min-h-0 + overflow-hidden */}
+      <div className="flex flex-1 min-h-0 flex-col pt-16">
        
         {/* ====================================================
             SECONDARY HEADER
             ==================================================== */}
 
         <header
-          className="sticky top-16 z-30 flex min-h-[60px] flex-shrink-0 items-center border-b bg-white/95 backdrop-blur-xl"
-          style={{
-            borderColor: "rgba(7,17,29,.07)",
-          }}
+          className="sticky top-16 z-30 flex min-h-[60px] flex-shrink-0 items-center bg-white/95 backdrop-blur-xl relative overflow-hidden"
         >
-          <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3 px-4 sm:px-6 lg:px-8">
+          <NdopTexture opacity={0.03} />
+
+          <div className="relative mx-auto flex w-full max-w-[1600px] items-center gap-3 px-4 sm:px-6 lg:px-8">
             {/* ================================================
                 PAGE CONTEXT
                 ================================================ */}
@@ -155,8 +201,8 @@ export function AppLayout() {
                 <div
                   className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-lg sm:flex"
                   style={{
-                    background: "#F7F3EA",
-                    color: "#A77A21",
+                    background: "rgba(212,175,55,0.1)",
+                    color: CM.ember,
                   }}
                 >
                   <Home size={14} strokeWidth={2} />
@@ -224,7 +270,7 @@ export function AppLayout() {
             >
               <Search
                 size={15}
-                className="shrink-0 text-slate-400 transition-colors group-focus-within:text-[#A77A21]"
+                className="shrink-0 text-slate-400 transition-colors"
               />
 
               <input
@@ -283,13 +329,16 @@ export function AppLayout() {
           </div>
         </header>
 
+        {/* Ligne-motif — remplace le simple trait de séparation */}
+        <MotifLine />
+
         {/* ====================================================
             PAGE CONTENT
             ==================================================== */}
 
            <main
           id="main-content"
-          className="mx-auto w-full max-w-[1600px] flex-1 min-h-0 overflow-y-auto" // ⬅️ flex-1 seul → flex-1 min-h-0 overflow-y-auto
+          className="mx-auto w-full max-w-[1600px] flex-1 min-h-0 overflow-y-auto"
         >
           <Outlet />
         </main>
@@ -297,4 +346,3 @@ export function AppLayout() {
     </div>
   );
 }
-

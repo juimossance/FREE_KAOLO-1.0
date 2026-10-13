@@ -59,7 +59,7 @@ private  final Projetservice projetService;
     public ResponseEntity<List<ProjetDto>> getMesProjets(@PathVariable Long id) {
         return ResponseEntity.ok(service.getMesProjets(id));
     }
-    
+
 
     @GetMapping("/projets/{projetId}")
     public ResponseEntity<ProjetDto> getProjet(@PathVariable Long projetId) {

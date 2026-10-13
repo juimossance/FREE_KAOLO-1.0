@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,11 +20,46 @@ public interface CandidatureRepository extends JpaRepository<Candidature, Long> 
     List<Candidature> findTop5ByFreelancerIdOrderByDateDesc(Long freelancerId); // ← date pas dateCandidature
     // ✅ Ajoute cette ligne
     boolean existsByFreelancerIdAndProjetId(Long freelancerId, Long projetId);
+
     List<Candidature> findByProjetId(Long projetId);
+    // CandidatureRepository
+    @Query("""
+    SELECT c
+    FROM Candidature c
+    WHERE c.projet.entreprise.id = :eid
+      AND c.projet.statut = 'Terminé'
+    ORDER BY c.projet.id DESC
+""")
+    List<Candidature> findMissionsTerminees(@Param("eid") Long entrepriseId);
+    // CandidatureRepository
+    @Query("""
+    SELECT AVG(c.note)
+    FROM Candidature c
+    WHERE c.freelancer.id = :id
+      AND c.note IS NOT NULL
+      AND c.note > 0
+""")
+    Double moyenneNote(@Param("id") Long id);
+    List<Candidature> findByProjetIdAndStatusIn(
+            Long projetId,
+            Collection<StatusCandidature> statuses
+    );
+
+    @Query("select c.projet.id from Candidature c where c.freelancer.id = :freelancerId")
+    List<Long> findProjetIdsByFreelancerId(@Param("freelancerId") Long freelancerId);
+    @Query("""
+    SELECT COUNT(c)
+    FROM Candidature c
+    WHERE c.freelancer.id = :id
+      AND c.note IS NOT NULL
+      AND c.note > 0
+""")
+    long countAvis(@Param("id") Long id);
+    List<Candidature> findByProjetIdAndStatus(Long projetId , StatusCandidature status);
 
     List<Candidature> findByProjetEntrepriseId(Long entrepriseId);
 
-    List<Candidature> findByProjetEntrepriseIdAndStatusIn(Long entrepriseId, List<StatusCandidature> statuses);
+    List<Candidature> findByProjetEntrepriseIdAndStatusIn(Long entrepriseId, List<StatusCandidature> status);
 
     @Query("""
 SELECT COUNT(c)
@@ -109,4 +145,9 @@ ORDER BY c.date DESC
             @Param("candidatureId") Long candidatureId,
             @Param("entrepriseId") Long entrepriseId
     );
+
+
+
+    boolean existsByProjetIdAndFreelancerIdAndStatus(Long projetId, Long freelancerId, StatusCandidature status);
+    Optional<Candidature> findByProjetIdAndFreelancerId(Long projetId, Long freelancerId);
 }

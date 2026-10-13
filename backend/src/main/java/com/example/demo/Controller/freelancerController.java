@@ -28,13 +28,11 @@ public class freelancerController {
 
     @Autowired private Freelancerservice prestataireService;
     @Autowired FreelancerProfilService service;
-    @Autowired private UserRepository repository;
     @Autowired private CandidatureService candidatureService;
     @Autowired private NotificationRepository notificationRepository;
-    @Autowired private PaiementRepository paiementRepository;
     @Autowired private PortfolioRepository portfolioRepository;
     @Autowired private freelancerRepository freelancerRepository;
-    @Autowired private CandidatureRepository candidatureRepository;
+
 
     /* ============================================================
        ESPACE FREELANCER CONNECTÉ — routes /me/**
@@ -95,13 +93,7 @@ public class freelancerController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * Notifications du freelancer connecté.
-     * Appelé par la Navbar via apiFetch("/freelancer/me/notifications").
-     *
-     * CORRECTION : utilise UserPrincipal (pas User) — c'est ce que
-     * JwtAuthenticationFilter place dans le SecurityContext.
-     */
+
     @GetMapping("/me/notifications")
     public ResponseEntity<List<NotificationDto>> getMyNotifications(
             @AuthenticationPrincipal UserPrincipal principal) {
@@ -150,8 +142,10 @@ public class freelancerController {
         long enAttente = candidatures.stream().filter(c -> "EN_ATTENTE".equals(c.getStatus())).count();
 
         Freelancer f = prestataireService.getByUserId(principal.getId());
-        int completion = calculerCompletion(f);
 
+        int completion = f != null
+                ? f.getCompletudeProfil()
+                : 0;
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalCandidatures",    total);
         stats.put("candidaturesAcceptees", acceptees);
@@ -309,19 +303,7 @@ public class freelancerController {
        HELPERS PRIVÉS
        ============================================================ */
 
-    private int calculerCompletion(Freelancer f) {
-        if (f == null) return 0;
-        int score = 0;
-        if (f.getNom()            != null) score += 15;
-        if (f.getPrenom()         != null) score += 15;
-        if (f.getSpecialite()     != null) score += 15;
-        if (f.getDescription()    != null) score += 15;
-        if (f.getCompetence()    != null && !f.getCompetence().isEmpty()) score += 15;
-        if (f.getPhotoUrl()       != null) score += 10;
-        if (f.getLinkedin()       != null) score += 10;
-        if (f.getTarifJournalier() > 0)    score += 5;
-        return score;
-    }
+
 
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> search(
@@ -364,5 +346,37 @@ public class freelancerController {
             return map;
         }).toList();
         return ResponseEntity.ok(result);
+    }
+    @PutMapping("/{id}/completion")
+    public ResponseEntity<Integer> updateCompletion(
+            @PathVariable Long id,
+            @RequestBody CompletionRequest request
+    ) {
+
+        if (request == null || request.completion() == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        int completion = request.completion();
+
+        if (completion < 0 || completion > 100) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Freelancer freelancer = freelancerRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Freelancer introuvable : " + id
+                        )
+                );
+
+        freelancer.setCompletudeProfil(completion);
+
+        freelancerRepository.save(freelancer);
+
+        return ResponseEntity.ok(
+                freelancer.getCompletudeProfil()
+        );
     }
 }
