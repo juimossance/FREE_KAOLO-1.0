@@ -4,7 +4,7 @@ import { Bot, Send, Loader2, FileText, BarChart2, Sparkles,
          RefreshCw, Copy, ThumbsUp, ThumbsDown, TrendingUp,
          Users, Download, CheckCircle, User, Mail, Phone, MapPin,
          Globe, Award, Briefcase, GraduationCap, Languages, Code } from "lucide-react";
-import { aiService, type AIMessage } from "../../../services/aiService";
+import { aiService, type AIMessage } from "../../../services/AIservice";
 
 type AITab = "assistant" | "cv" | "analysis";
 
