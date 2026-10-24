@@ -4,7 +4,6 @@ package com.example.demo.service;
 
 
 
-import com.example.demo.entity.Competence;
 import com.example.demo.entity.Freelancer;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
@@ -59,7 +58,7 @@ public class FreelancerSpecifications {
             }
 
             if (competences != null && !competences.isEmpty()) {
-                Join<Freelancer, Competence> competenceJoin = root.join("competence");
+                Join<Freelancer,String> competenceJoin = root.join("competence");
                 predicates.add(competenceJoin.get("nom").in(competences));
             }
 

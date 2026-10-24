@@ -1,7 +1,5 @@
 package com.example.demo.Dto;
 
-import com.example.demo.entity.Competence;
-
 import java.time.LocalDateTime;
 import java.util.List;
 

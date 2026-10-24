@@ -1,10 +1,7 @@
 package com.example.demo.Dto;
 
 import com.example.demo.Enum.Role;
-import com.example.demo.entity.Competence;
 import jakarta.validation.constraints.NotBlank;
-
-import java.util.List;
 
 
 public class registerRequest {
@@ -166,15 +163,11 @@ private String adresse;
 
 
 
-    public List<Competence> getCompetence() {
-        return competence;
-    }
 
-    public void setCompetence(List<Competence> competence) {
-        this.competence = competence;
-    }
 
-    private List<Competence> competence; // si freelancer
+
+
+  // si freelancer
 
     public String getExperience() {
         return Experience;

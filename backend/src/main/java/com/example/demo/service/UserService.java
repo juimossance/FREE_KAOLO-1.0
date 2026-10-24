@@ -2,7 +2,6 @@ package com.example.demo.service;
 
 import com.example.demo.Enum.Role;
 
-import com.example.demo.entity.Competence;
 import com.example.demo.entity.Entreprise;
 import com.example.demo.entity.Freelancer;
 import com.example.demo.entity.User;
@@ -13,7 +12,6 @@ import com.example.demo.repository.freelancerRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 ;
