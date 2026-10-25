@@ -12,6 +12,7 @@ import {
   EyeOff,
   Check,
 } from "lucide-react";
+import { apiFetch } from "../../../services/http";
 
 export function RegisterFreelancerPage() {
   const navigate = useNavigate();
@@ -32,17 +33,9 @@ export function RegisterFreelancerPage() {
   });
 
   /*
-   * ============================================================
-   * VALIDATION DU TÉLÉPHONE CAMEROUNAIS
-   * ============================================================
-   *
-   * Formats acceptés :
-   * 6XXXXXXXX
-   * +237 6XXXXXXXX
-   * +2376XXXXXXXX
-   * 2376XXXXXXXX
-   *
-   * On accepte également les espaces.
+   * Téléphone camerounais.
+   * Formats acceptés : 6XXXXXXXX, +237 6XXXXXXXX, +2376XXXXXXXX, 2376XXXXXXXX
+   * Les espaces et tirets sont tolérés.
    */
   const isValidCameroonPhone = (phone: string) => {
     const normalized = phone.replace(/[\s-]/g, "");
@@ -54,20 +47,11 @@ export function RegisterFreelancerPage() {
     );
   };
 
-  /*
-   * ============================================================
-   * VALIDATION DE L'EMAIL
-   * ============================================================
-   */
   const isValidEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   };
 
-  /*
-   * ============================================================
-   * VALIDATION DU SLIDE 1
-   * ============================================================
-   */
+  /* ---------------------- VALIDATION SLIDE 1 ---------------------- */
   const validateStep1 = () => {
     setError(null);
 
@@ -116,11 +100,7 @@ export function RegisterFreelancerPage() {
     return true;
   };
 
-  /*
-   * ============================================================
-   * VALIDATION DU SLIDE 2
-   * ============================================================
-   */
+  /* ---------------------- VALIDATION SLIDE 2 ---------------------- */
   const validateStep2 = () => {
     setError(null);
 
@@ -130,9 +110,7 @@ export function RegisterFreelancerPage() {
     }
 
     if (form.password.length < 8) {
-      setError(
-        "Le mot de passe doit contenir au moins 8 caractères."
-      );
+      setError("Le mot de passe doit contenir au moins 8 caractères.");
       return false;
     }
 
@@ -149,36 +127,20 @@ export function RegisterFreelancerPage() {
     return true;
   };
 
-  /*
-   * ============================================================
-   * PASSAGE AU SLIDE SUIVANT
-   * ============================================================
-   */
+  /* ---------------------- NAVIGATION ---------------------- */
   const handleNext = () => {
     setError(null);
 
-    if (step === 1) {
-      if (validateStep1()) {
-        setStep(2);
-      }
-
+    if (step === 1 && validateStep1()) {
+      setStep(2);
       return;
     }
 
-    if (step === 2) {
-      if (validateStep2()) {
-        setStep(3);
-      }
-
-      return;
+    if (step === 2 && validateStep2()) {
+      setStep(3);
     }
   };
 
-  /*
-   * ============================================================
-   * RETOUR AU SLIDE PRÉCÉDENT
-   * ============================================================
-   */
   const handleBack = () => {
     setError(null);
 
@@ -187,21 +149,12 @@ export function RegisterFreelancerPage() {
     }
   };
 
-  /*
-   * ============================================================
-   * INSCRIPTION
-   * ============================================================
-   */
+  /* ---------------------- INSCRIPTION ---------------------- */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setError(null);
 
-    /*
-     * Sécurité supplémentaire :
-     * même si l'utilisateur arrive au slide 3,
-     * on revalide toutes les informations avant l'envoi.
-     */
+    // Sécurité : on revalide tout avant l'envoi
     if (!validateStep1()) {
       setStep(1);
       return;
@@ -214,15 +167,8 @@ export function RegisterFreelancerPage() {
 
     setLoading(true);
 
-    /*
-     * IMPORTANT :
-     *
-     * On envoie uniquement les informations nécessaires
-     * à la création du compte.
-     *
-     * Les compétences, l'expérience, la spécialité,
-     * le CV, etc. seront complétés après l'inscription.
-     */
+    // Seules les infos nécessaires à la création du compte sont envoyées.
+    // Compétences, expérience, CV... seront complétés après l'inscription.
     const payload = {
       nom: form.lastName.trim(),
       prenom: form.firstName.trim(),
@@ -232,47 +178,13 @@ export function RegisterFreelancerPage() {
     };
 
     try {
-      const response = await fetch(
-        "http://localhost:8080/api/auth/register/prestataire",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      // apiFetch gère l'URL, les headers et l'extraction du message d'erreur
+      await apiFetch<unknown>("/auth/register/prestataire", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
 
-      if (!response.ok) {
-        let message = "Une erreur est survenue lors de l'inscription.";
-
-        try {
-          const data = await response.json();
-
-          if (typeof data === "string") {
-            message = data;
-          } else if (data?.message) {
-            message = data.message;
-          } else if (data?.error) {
-            message = data.error;
-          }
-        } catch {
-          const text = await response.text();
-
-          if (text) {
-            message = text;
-          }
-        }
-
-        throw new Error(message);
-      }
-
-      /*
-       * Inscription réussie.
-       *
-       * On ne connecte pas automatiquement l'utilisateur ici.
-       * On l'envoie vers la vérification email.
-       */
+      // Pas de connexion automatique : on passe par la vérification email
       navigate("/verify-email");
     } catch (err) {
       setError(
@@ -285,11 +197,7 @@ export function RegisterFreelancerPage() {
     }
   };
 
-  /*
-   * ============================================================
-   * STYLES
-   * ============================================================
-   */
+  /* ---------------------- STYLES ---------------------- */
   const inputClass =
     "w-full px-4 py-3 rounded-xl text-sm border outline-none transition-all";
 
@@ -299,21 +207,12 @@ export function RegisterFreelancerPage() {
     color: "var(--foreground)",
   };
 
-  /*
-   * ============================================================
-   * AFFICHAGE
-   * ============================================================
-   */
+  /* ---------------------- AFFICHAGE ---------------------- */
   return (
     <div>
-      {/* ======================================================
-          TITRE
-      ======================================================= */}
+      {/* TITRE */}
       <div className="mb-6">
-        <h1
-          className="text-2xl font-bold"
-          style={{ color: "var(--navy)" }}
-        >
+        <h1 className="text-2xl font-bold" style={{ color: "var(--navy)" }}>
           Inscription Freelancer
         </h1>
 
@@ -321,24 +220,19 @@ export function RegisterFreelancerPage() {
           className="mt-1.5 text-sm"
           style={{ color: "var(--muted-foreground)" }}
         >
-          Créez votre compte et rejoignez la communauté
-          Free-Kaolo
+          Créez votre compte et rejoignez la communauté Free-Kaolo
         </p>
       </div>
 
-      {/* ======================================================
-          INDICATEUR DES ÉTAPES
-      ======================================================= */}
+      {/* INDICATEUR DES ÉTAPES */}
       <div className="flex items-center gap-2 mb-8">
         {[1, 2, 3].map((s) => (
           <div key={s} className="flex items-center gap-2">
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all"
               style={{
-                background:
-                  s <= step ? "var(--navy)" : "var(--muted)",
-                color:
-                  s <= step ? "#FFF" : "var(--muted-foreground)",
+                background: s <= step ? "var(--navy)" : "var(--muted)",
+                color: s <= step ? "#FFF" : "var(--muted-foreground)",
               }}
             >
               {s < step ? <Check size={15} /> : s}
@@ -348,26 +242,17 @@ export function RegisterFreelancerPage() {
               className="text-xs font-medium hidden sm:block"
               style={{
                 color:
-                  s <= step
-                    ? "var(--navy)"
-                    : "var(--muted-foreground)",
+                  s <= step ? "var(--navy)" : "var(--muted-foreground)",
               }}
             >
-              {s === 1
-                ? "Identité"
-                : s === 2
-                ? "Sécurité"
-                : "Confirmation"}
+              {s === 1 ? "Identité" : s === 2 ? "Sécurité" : "Confirmation"}
             </span>
 
             {s < 3 && (
               <div
                 className="w-8 h-px mx-1"
                 style={{
-                  background:
-                    step > s
-                      ? "var(--gold)"
-                      : "var(--border)",
+                  background: step > s ? "var(--gold)" : "var(--border)",
                 }}
               />
             )}
@@ -375,9 +260,7 @@ export function RegisterFreelancerPage() {
         ))}
       </div>
 
-      {/* ======================================================
-          MESSAGE D'ERREUR GLOBAL
-      ======================================================= */}
+      {/* MESSAGE D'ERREUR GLOBAL */}
       {error && (
         <div
           className="mb-5 p-3 rounded-xl text-sm border"
@@ -386,18 +269,16 @@ export function RegisterFreelancerPage() {
             borderColor: "#FECACA",
             color: "var(--destructive)",
           }}
+          role="alert"
         >
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit}>
-        {/* ====================================================
-            SLIDE 1 : IDENTITÉ
-        ===================================================== */}
+        {/* ================= SLIDE 1 : IDENTITÉ ================= */}
         {step === 1 && (
           <div className="space-y-4">
-            {/* PRÉNOM + NOM */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* PRÉNOM */}
               <div>
@@ -422,10 +303,7 @@ export function RegisterFreelancerPage() {
                     autoComplete="given-name"
                     value={form.firstName}
                     onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        firstName: e.target.value,
-                      }))
+                      setForm((f) => ({ ...f, firstName: e.target.value }))
                     }
                   />
                 </div>
@@ -454,10 +332,7 @@ export function RegisterFreelancerPage() {
                     autoComplete="family-name"
                     value={form.lastName}
                     onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        lastName: e.target.value,
-                      }))
+                      setForm((f) => ({ ...f, lastName: e.target.value }))
                     }
                   />
                 </div>
@@ -488,10 +363,7 @@ export function RegisterFreelancerPage() {
                   inputMode="tel"
                   value={form.phone}
                   onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      phone: e.target.value,
-                    }))
+                    setForm((f) => ({ ...f, phone: e.target.value }))
                   }
                 />
               </div>
@@ -527,24 +399,17 @@ export function RegisterFreelancerPage() {
                   autoComplete="email"
                   value={form.email}
                   onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      email: e.target.value,
-                    }))
+                    setForm((f) => ({ ...f, email: e.target.value }))
                   }
                 />
               </div>
             </div>
 
-            {/* BOUTON */}
             <button
               type="button"
               onClick={handleNext}
               className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-semibold"
-              style={{
-                background: "var(--navy)",
-                color: "#FFF",
-              }}
+              style={{ background: "var(--navy)", color: "#FFF" }}
             >
               Continuer
               <ArrowRight size={16} />
@@ -552,9 +417,7 @@ export function RegisterFreelancerPage() {
           </div>
         )}
 
-        {/* ====================================================
-            SLIDE 2 : SÉCURITÉ
-        ===================================================== */}
+        {/* ================= SLIDE 2 : SÉCURITÉ ================= */}
         {step === 2 && (
           <div className="space-y-4">
             {/* MOT DE PASSE */}
@@ -580,10 +443,7 @@ export function RegisterFreelancerPage() {
                   autoComplete="new-password"
                   value={form.password}
                   onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      password: e.target.value,
-                    }))
+                    setForm((f) => ({ ...f, password: e.target.value }))
                   }
                 />
 
@@ -597,15 +457,11 @@ export function RegisterFreelancerPage() {
                       : "Afficher le mot de passe"
                   }
                 >
-                  {showPwd ? (
-                    <EyeOff size={15} />
-                  ) : (
-                    <Eye size={15} />
-                  )}
+                  {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
 
-              {/* INDICATEUR FORCE */}
+              {/* INDICATEUR DE FORCE */}
               <div className="mt-2 h-1.5 rounded-full bg-slate-200 overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all"
@@ -628,8 +484,7 @@ export function RegisterFreelancerPage() {
                 className="mt-1.5 text-xs"
                 style={{ color: "var(--muted-foreground)" }}
               >
-                Le mot de passe doit contenir au moins 8
-                caractères.
+                Le mot de passe doit contenir au moins 8 caractères.
               </p>
             </div>
 
@@ -651,9 +506,7 @@ export function RegisterFreelancerPage() {
                 <input
                   className={`${inputClass} pl-10 pr-11`}
                   style={inputStyle}
-                  type={
-                    showConfirmPwd ? "text" : "password"
-                  }
+                  type={showConfirmPwd ? "text" : "password"}
                   placeholder="••••••••"
                   autoComplete="new-password"
                   value={form.confirmPassword}
@@ -667,9 +520,7 @@ export function RegisterFreelancerPage() {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowConfirmPwd(!showConfirmPwd)
-                  }
+                  onClick={() => setShowConfirmPwd(!showConfirmPwd)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                   aria-label={
                     showConfirmPwd
@@ -677,25 +528,17 @@ export function RegisterFreelancerPage() {
                       : "Afficher la confirmation"
                   }
                 >
-                  {showConfirmPwd ? (
-                    <EyeOff size={15} />
-                  ) : (
-                    <Eye size={15} />
-                  )}
+                  {showConfirmPwd ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
             </div>
 
-            {/* BOUTONS */}
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={handleBack}
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold border"
-                style={{
-                  borderColor: "var(--border)",
-                  color: "var(--navy)",
-                }}
+                style={{ borderColor: "var(--border)", color: "var(--navy)" }}
               >
                 <ArrowLeft size={16} />
                 Retour
@@ -705,10 +548,7 @@ export function RegisterFreelancerPage() {
                 type="button"
                 onClick={handleNext}
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold"
-                style={{
-                  background: "var(--navy)",
-                  color: "#FFF",
-                }}
+                style={{ background: "var(--navy)", color: "#FFF" }}
               >
                 Continuer
                 <ArrowRight size={16} />
@@ -717,26 +557,17 @@ export function RegisterFreelancerPage() {
           </div>
         )}
 
-        {/* ====================================================
-            SLIDE 3 : CONFIRMATION
-        ===================================================== */}
+        {/* ================= SLIDE 3 : CONFIRMATION ================= */}
         {step === 3 && (
           <div className="space-y-4">
-            {/* MESSAGE */}
             <div
               className="p-4 rounded-xl border"
-              style={{
-                borderColor: "var(--border)",
-                background: "#F8FAFC",
-              }}
+              style={{ borderColor: "var(--border)", background: "#F8FAFC" }}
             >
               <div className="flex items-center gap-3 mb-2">
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center"
-                  style={{
-                    background: "var(--navy)",
-                    color: "#FFF",
-                  }}
+                  style={{ background: "var(--navy)", color: "#FFF" }}
                 >
                   <Check size={17} />
                 </div>
@@ -751,12 +582,9 @@ export function RegisterFreelancerPage() {
 
                   <p
                     className="text-xs"
-                    style={{
-                      color: "var(--muted-foreground)",
-                    }}
+                    style={{ color: "var(--muted-foreground)" }}
                   >
-                    Votre compte sera créé avec ces
-                    informations.
+                    Votre compte sera créé avec ces informations.
                   </p>
                 </div>
               </div>
@@ -765,21 +593,15 @@ export function RegisterFreelancerPage() {
             {/* RÉCAPITULATIF */}
             <div
               className="rounded-xl border overflow-hidden"
-              style={{
-                borderColor: "var(--border)",
-              }}
+              style={{ borderColor: "var(--border)" }}
             >
-              {/* PRÉNOM */}
               <div className="flex justify-between gap-4 p-4 border-b">
                 <span
                   className="text-xs font-medium"
-                  style={{
-                    color: "var(--muted-foreground)",
-                  }}
+                  style={{ color: "var(--muted-foreground)" }}
                 >
                   Prénom
                 </span>
-
                 <span
                   className="text-sm font-medium text-right"
                   style={{ color: "var(--navy)" }}
@@ -788,17 +610,13 @@ export function RegisterFreelancerPage() {
                 </span>
               </div>
 
-              {/* NOM */}
               <div className="flex justify-between gap-4 p-4 border-b">
                 <span
                   className="text-xs font-medium"
-                  style={{
-                    color: "var(--muted-foreground)",
-                  }}
+                  style={{ color: "var(--muted-foreground)" }}
                 >
                   Nom
                 </span>
-
                 <span
                   className="text-sm font-medium text-right"
                   style={{ color: "var(--navy)" }}
@@ -807,17 +625,13 @@ export function RegisterFreelancerPage() {
                 </span>
               </div>
 
-              {/* TÉLÉPHONE */}
               <div className="flex justify-between gap-4 p-4 border-b">
                 <span
                   className="text-xs font-medium"
-                  style={{
-                    color: "var(--muted-foreground)",
-                  }}
+                  style={{ color: "var(--muted-foreground)" }}
                 >
                   Téléphone
                 </span>
-
                 <span
                   className="text-sm font-medium text-right"
                   style={{ color: "var(--navy)" }}
@@ -826,17 +640,13 @@ export function RegisterFreelancerPage() {
                 </span>
               </div>
 
-              {/* EMAIL */}
               <div className="flex justify-between gap-4 p-4">
                 <span
                   className="text-xs font-medium"
-                  style={{
-                    color: "var(--muted-foreground)",
-                  }}
+                  style={{ color: "var(--muted-foreground)" }}
                 >
                   Email
                 </span>
-
                 <span
                   className="text-sm font-medium text-right break-all"
                   style={{ color: "var(--navy)" }}
@@ -846,23 +656,14 @@ export function RegisterFreelancerPage() {
               </div>
             </div>
 
-            {/* INFORMATION */}
-            <div
-              className="p-4 rounded-xl"
-              style={{
-                background: "#F8FAFC",
-              }}
-            >
+            <div className="p-4 rounded-xl" style={{ background: "#F8FAFC" }}>
               <p
                 className="text-xs leading-5"
-                style={{
-                  color: "var(--muted-foreground)",
-                }}
+                style={{ color: "var(--muted-foreground)" }}
               >
-                Après la création de votre compte, vous
-                pourrez compléter votre profil avec votre
-                spécialité, vos compétences, votre expérience,
-                votre CV et vos certifications.
+                Après la création de votre compte, vous pourrez compléter
+                votre profil avec votre spécialité, vos compétences, votre
+                expérience, votre CV et vos certifications.
               </p>
             </div>
 
@@ -878,9 +679,7 @@ export function RegisterFreelancerPage() {
               <label
                 htmlFor="terms"
                 className="text-xs leading-5"
-                style={{
-                  color: "var(--muted-foreground)",
-                }}
+                style={{ color: "var(--muted-foreground)" }}
               >
                 J'accepte les{" "}
                 <Link
@@ -902,7 +701,6 @@ export function RegisterFreelancerPage() {
               </label>
             </div>
 
-            {/* BOUTONS */}
             <div className="flex gap-3">
               <button
                 type="button"
@@ -931,10 +729,7 @@ export function RegisterFreelancerPage() {
               >
                 {loading ? (
                   <>
-                    <Loader2
-                      size={15}
-                      className="animate-spin"
-                    />
+                    <Loader2 size={15} className="animate-spin" />
                     Inscription...
                   </>
                 ) : (
@@ -949,9 +744,7 @@ export function RegisterFreelancerPage() {
         )}
       </form>
 
-      {/* ======================================================
-          INSCRIPTION ENTREPRISE
-      ======================================================= */}
+      {/* LIENS */}
       <p
         className="mt-6 text-center text-sm"
         style={{ color: "var(--muted-foreground)" }}
@@ -966,9 +759,6 @@ export function RegisterFreelancerPage() {
         </Link>
       </p>
 
-      {/* ======================================================
-          CONNEXION
-      ======================================================= */}
       <p
         className="mt-2 text-center text-sm"
         style={{ color: "var(--muted-foreground)" }}
