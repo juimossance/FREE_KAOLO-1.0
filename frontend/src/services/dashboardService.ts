@@ -1,10 +1,6 @@
-// src/services/dashboardService.ts
 import type { FreelancerDashboardData } from "../models/dashboard";
+import { apiFetch } from "./http";
 
-export async function getFreelancerDashboard(token: string): Promise<FreelancerDashboardData> {
-  const res = await fetch("http://localhost:8080/api/dashboard/freelancer", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error("Impossible de charger le dashboard");
-  return res.json();
+export function getFreelancerDashboard(): Promise<FreelancerDashboardData> {
+  return apiFetch<FreelancerDashboardData>("/dashboard/freelancer");
 }
