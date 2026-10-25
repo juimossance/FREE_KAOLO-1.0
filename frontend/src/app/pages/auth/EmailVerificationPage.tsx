@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { Mail, Loader2, ArrowRight, RefreshCw } from "lucide-react";
+import { apiFetch } from "../../../services/http";
 
 export function EmailVerificationPage() {
   const [code, setCode] = useState("");
@@ -13,32 +14,38 @@ export function EmailVerificationPage() {
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code) return;
+
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch(
-        `http://localhost:8080/api/auth/activate?code=${code}`,
+      // encodeURIComponent protège contre les caractères spéciaux dans le code
+      await apiFetch<string>(
+        `/auth/activate?code=${encodeURIComponent(code)}`,
         { method: "GET" }
       );
 
-      const message = await response.text();
-
-      if (!response.ok) {
-        throw new Error(message || "Code d'activation invalide.");
-      }
-
       navigate("/login");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur réseau, veuillez réessayer.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Erreur réseau, veuillez réessayer."
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // TODO : remplacer la simulation par l'appel réel dès que l'endpoint
+  // de renvoi existe côté Spring Boot, par exemple :
+  // await apiFetch<void>("/auth/resend-code", {
+  //   method: "POST",
+  //   body: JSON.stringify({ email }),
+  // });
   const handleResend = async () => {
     setResending(true);
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, 1000));
     setResending(false);
     setResent(true);
     setTimeout(() => setResent(false), 4000);
@@ -47,13 +54,23 @@ export function EmailVerificationPage() {
   return (
     <div>
       <div className="mb-8 text-center">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
-          style={{ background: "var(--secondary)" }}>
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
+          style={{ background: "var(--secondary)" }}
+        >
           <Mail size={28} style={{ color: "var(--navy)" }} />
         </div>
-        <h1 className="text-2xl font-bold" style={{ color: "var(--navy)" }}>Vérification email</h1>
-        <p className="mt-2 text-sm" style={{ color: "var(--muted-foreground)" }}>
-          Un code d'activation a été envoyé à votre adresse email.<br />
+
+        <h1 className="text-2xl font-bold" style={{ color: "var(--navy)" }}>
+          Vérification email
+        </h1>
+
+        <p
+          className="mt-2 text-sm"
+          style={{ color: "var(--muted-foreground)" }}
+        >
+          Un code d'activation a été envoyé à votre adresse email.
+          <br />
           Copiez-le et collez-le ci-dessous.
         </p>
       </div>
@@ -75,7 +92,11 @@ export function EmailVerificationPage() {
         </div>
 
         {error && (
-          <div className="p-3 rounded-xl text-sm mb-4" style={{ background: "#FEF2F2", color: "var(--destructive)" }}>
+          <div
+            className="p-3 rounded-xl text-sm mb-4"
+            style={{ background: "#FEF2F2", color: "var(--destructive)" }}
+            role="alert"
+          >
             {error}
           </div>
         )}
@@ -87,29 +108,57 @@ export function EmailVerificationPage() {
           style={{
             background: "var(--navy)",
             color: "#FFF",
-            opacity: (loading || !code) ? 0.6 : 1,
-          }}>
-          {loading ? <><Loader2 size={16} className="animate-spin" /> Vérification...</> : <>Activer mon compte <ArrowRight size={16} /></>}
+            opacity: loading || !code ? 0.6 : 1,
+          }}
+        >
+          {loading ? (
+            <>
+              <Loader2 size={16} className="animate-spin" /> Vérification...
+            </>
+          ) : (
+            <>
+              Activer mon compte <ArrowRight size={16} />
+            </>
+          )}
         </button>
       </form>
 
       <div className="text-center">
         {resent && (
-          <p className="text-sm font-medium mb-2" style={{ color: "var(--success)" }}>
+          <p
+            className="text-sm font-medium mb-2"
+            style={{ color: "var(--success)" }}
+          >
             ✓ Code renvoyé avec succès
           </p>
         )}
-        <button onClick={handleResend} disabled={resending}
+
+        <button
+          type="button"
+          onClick={handleResend}
+          disabled={resending}
           className="flex items-center gap-2 mx-auto text-sm font-medium transition-colors"
-          style={{ color: "var(--muted-foreground)" }}>
-          {resending ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+          style={{ color: "var(--muted-foreground)" }}
+        >
+          {resending ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <RefreshCw size={14} />
+          )}
           Renvoyer le code
         </button>
       </div>
 
-      <p className="mt-8 text-center text-sm" style={{ color: "var(--muted-foreground)" }}>
+      <p
+        className="mt-8 text-center text-sm"
+        style={{ color: "var(--muted-foreground)" }}
+      >
         Mauvaise adresse ?{" "}
-        <Link to="/register/freelancer" className="font-semibold" style={{ color: "var(--navy)" }}>
+        <Link
+          to="/register/freelancer"
+          className="font-semibold"
+          style={{ color: "var(--navy)" }}
+        >
           Modifier
         </Link>
       </p>
