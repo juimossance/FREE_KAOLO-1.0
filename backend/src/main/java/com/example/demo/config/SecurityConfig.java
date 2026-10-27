@@ -49,7 +49,7 @@ public class SecurityConfig {
 
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "https://free-kaolo-1-3.onrender.com"
+                "https://free-kaolo-1-0.onrender.com"
         ));
 
         config.setAllowedMethods(List.of(
