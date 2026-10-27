@@ -11,7 +11,7 @@ import java.util.Map;
 @RequestMapping("/api/freelancer-paiement")
 @CrossOrigin(origins = {
     "http://localhost:5173",
-    "https://free-kaolo-1-3.onrender.com"
+    "https://free-kaolo-1-0.onrender.com"
 })
 public class PaiementPortfolioController {
 
