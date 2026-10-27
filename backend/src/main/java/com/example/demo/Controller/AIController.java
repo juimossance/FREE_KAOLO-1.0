@@ -43,10 +43,10 @@ import java.util.*;
  */
 @RestController
 @RequestMapping("/api/ai")
-config.setAllowedOrigins(List.of(
+@CrossOrigin(origins = {
     "http://localhost:5173",
     "https://free-kaolo-1-3.onrender.com"
-));
+})
 public class AIController {
 
     private static final Logger log = LoggerFactory.getLogger(AIController.class);
