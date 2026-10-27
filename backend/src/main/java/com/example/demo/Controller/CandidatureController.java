@@ -16,7 +16,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/freelancer/candidatures")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {
+    "http://localhost:5173",
+    "https://free-kaolo-1-3.onrender.com"
+})
 public class CandidatureController {
 
     private final CandidatureService candidatureService;
