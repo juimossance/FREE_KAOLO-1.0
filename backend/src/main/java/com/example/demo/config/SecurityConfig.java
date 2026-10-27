@@ -44,7 +44,10 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("https://free-kaolo-1-3.onrender.com")
+                        config.setAllowedOrigins(List.of(
+    "http://localhost:5173",
+    "https://free-kaolo-1-3.onrender.com"
+));
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*");
             }
