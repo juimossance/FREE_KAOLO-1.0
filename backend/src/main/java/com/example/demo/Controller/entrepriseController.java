@@ -35,7 +35,10 @@ import java.util.Map;
  *                          utiliser depuis l'espace entreprise du frontend.
  */
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {
+    "http://localhost:5173",
+    "https://free-kaolo-1-3.onrender.com"
+})
 @RequestMapping("/api/entreprise")
 public class entrepriseController {
 
