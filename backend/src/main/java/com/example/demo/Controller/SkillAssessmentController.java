@@ -13,7 +13,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/skill-assessment")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {
+    "http://localhost:5173",
+    "https://free-kaolo-1-3.onrender.com"
+})
 public class SkillAssessmentController {
 
     private final SkillAssessmentService service;
