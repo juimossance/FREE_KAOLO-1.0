@@ -9,10 +9,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/freelancer-paiement")
-@CrossOrigin(origins = {
-    "http://localhost:5173",
-    "https://free-kaolo-1-0.onrender.com"
-})
+
 public class PaiementPortfolioController {
 
     private final PaiementPortfolioService service;
