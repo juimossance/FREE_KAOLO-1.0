@@ -23,30 +23,10 @@ import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.util.*;
 
-/**
- * Contrôleur des fonctionnalités IA de Free-Kaolo.
- *
- * Architecture de /api/ai/ideal-profile :
- *
- * React
- *    ↓
- * Groq comprend le besoin (extraction des critères)
- *    ↓
- * RecommendationIAService interroge MySQL
- *    ↓
- * calcul déterministe des scores
- *    (si aucune correspondance : meilleurs profils en alternative)
- *    ↓
- * Groq explique les recommandations
- *    ↓
- * réponse : summary + recommendations + exactMatch
- */
+
 @RestController
 @RequestMapping("/api/ai")
-@CrossOrigin(origins = {
-    "http://localhost:5173",
-    "https://free-kaolo-1-0.vercel.app"
-})
+
 public class AIController {
 
     private static final Logger log = LoggerFactory.getLogger(AIController.class);
