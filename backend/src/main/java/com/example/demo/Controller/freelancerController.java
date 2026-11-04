@@ -22,10 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = {
-    "http://localhost:5173",
-    "https://free-kaolo-1-0.onrender.com"
-})
+
 @RequestMapping("/api/freelancer")
 public class freelancerController {
 
