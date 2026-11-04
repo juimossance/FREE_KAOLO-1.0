@@ -11,10 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/freelancer")
-@CrossOrigin(origins = {
-    "http://localhost:5173",
-    "https://free-kaolo-1-0.onrender.com"
-})
+
 public class FreelancerProfilController {
 
     private final FreelancerProfilService service;
