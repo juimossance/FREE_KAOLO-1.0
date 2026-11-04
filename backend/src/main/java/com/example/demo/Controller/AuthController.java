@@ -32,7 +32,7 @@ import java.util.concurrent.CompletableFuture;
 
 @CrossOrigin(origins = {
     "http://localhost:5173",
-    "https://free-kaolo-1-0.onrender.com"
+   "https://free-kaolo-1-0.vercel.app"
 })
 @RestController
 @RequestMapping("/api/auth")
