@@ -30,10 +30,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-@CrossOrigin(origins = {
-    "http://localhost:5173",
-   "https://free-kaolo-1-0.vercel.app"
-})
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
