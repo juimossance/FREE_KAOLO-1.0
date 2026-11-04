@@ -16,10 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/projets")
-@CrossOrigin(origins = {
-    "http://localhost:5173",
-    "https://free-kaolo-1-0.onrender.com"
-})
+
 public class ProjetController {
 
     private final ProjetEntrepriseService service;
