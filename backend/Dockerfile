@@ -1,23 +1,24 @@
 FROM maven:3.9-eclipse-temurin-21 AS build
-
 WORKDIR /app
 
+# Dépendances en cache : ne se retéléchargent que si le pom.xml change
 COPY pom.xml .
-COPY src ./src
+RUN mvn -B -q dependency:go-offline
 
-RUN mvn clean package -DskipTests
+COPY src ./src
+RUN mvn -B -q clean package -DskipTests
 
 FROM eclipse-temurin:21-jre
-
 WORKDIR /app
 
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build --chown=1000:1000 /app/target/*.jar app.jar
+RUN mkdir -p /app/uploads && chown -R 1000:1000 /app
 
-# Hugging Face lance le conteneur avec un utilisateur non-root (uid 1000) :
-# on rend /app accessible en écriture (dossier uploads, fichiers temporaires)
-RUN mkdir -p /app/uploads && chmod -R 777 /app
+# uid 1000 = utilisateur imposé par Hugging Face (pas de chmod 777)
+USER 1000:1000
 
-# Hugging Face attend l'application sur le port 7860
+ENV SPRING_PROFILES_ACTIVE=prod
 EXPOSE 7860
 
-ENTRYPOINT ["sh", "-c", "java -XX:MaxRAMPercentage=50 -Dserver.port=${PORT:-7860} -jar app.jar"]
+# exec : Java reçoit SIGTERM et s'arrête proprement
+ENTRYPOINT ["sh", "-c", "exec java -XX:MaxRAMPercentage=75 -Dserver.port=${PORT:-7860} -jar app.jar"]
