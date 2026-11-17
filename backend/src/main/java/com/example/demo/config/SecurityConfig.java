@@ -3,6 +3,7 @@ package com.example.demo.config;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,7 +19,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 @EnableWebSecurity
@@ -31,11 +31,17 @@ public class SecurityConfig {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
+    // ==============================
+    // PASSWORD ENCODER
+    // ==============================
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    // ==============================
+    // AUTHENTICATION MANAGER
+    // ==============================
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration
@@ -43,33 +49,44 @@ public class SecurityConfig {
         return configuration.getAuthenticationManager();
     }
 
-    // Configuration CORS pour le frontend local et le frontend Render
+    // ==============================
+    // CONFIGURATION CORS
+    // ==============================
     @Bean
-public CorsConfigurationSource corsConfigurationSource(
-        @Value("${app.cors.allowed-origins}") List<String> origins) {
+    public CorsConfigurationSource corsConfigurationSource(
+            @Value("${app.cors.allowed-origins}") List<String> origins
+    ) {
 
-    CorsConfiguration config = new CorsConfiguration();
+        CorsConfiguration config = new CorsConfiguration();
 
-    config.setAllowedOrigins(origins);
-    config.setAllowedMethods(
-        List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-    );
+        config.setAllowedOrigins(origins);
 
-    config.setAllowedHeaders(
-        List.of("Authorization", "Content-Type")
-    );
+        config.setAllowedMethods(List.of(
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+        ));
 
-    config.setAllowCredentials(true);
-    config.setMaxAge(3600L);
+        config.setAllowedHeaders(List.of("*"));
 
-    UrlBasedCorsConfigurationSource source =
-        new UrlBasedCorsConfigurationSource();
+        config.setAllowCredentials(true);
 
-    source.registerCorsConfiguration("/api/**", config);
+        config.setMaxAge(3600L);
 
-    return source;
-}
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
 
+        source.registerCorsConfiguration("/**", config);
+
+        return source;
+    }
+
+    // ==============================
+    // SECURITY FILTER CHAIN
+    // ==============================
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http
@@ -77,10 +94,15 @@ public CorsConfigurationSource corsConfigurationSource(
 
         http
                 .csrf(csrf -> csrf.disable())
+
                 .cors(cors -> {})
+
                 .authorizeHttpRequests(auth -> auth
 
-                        // Authentification et inscription publiques
+                        // OPTIONS : requêtes préliminaires CORS
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // AUTHENTIFICATION ET INSCRIPTION
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/register",
@@ -89,11 +111,13 @@ public CorsConfigurationSource corsConfigurationSource(
                                 "/api/auth/register/entreprise"
                         ).permitAll()
 
+                        // ROUTES PUBLIQUES
                         .requestMatchers(
                                 "/error",
                                 "/uploads/**"
                         ).permitAll()
 
+                        // TESTS GROQ
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/ai/test-groq-dns",
@@ -103,15 +127,18 @@ public CorsConfigurationSource corsConfigurationSource(
                                 "/api/ai/test-network"
                         ).permitAll()
 
-                        .requestMatchers("/api/auth/me").authenticated()
+                        // AUTHENTIFICATION UTILISATEUR
+                        .requestMatchers(
+                                "/api/auth/me"
+                        ).authenticated()
 
-                        // Avis
+                        // AVIS
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/freelancer/candidatures/*/avis"
                         ).hasAnyRole("ENTREPRISE", "FREELANCER")
 
-                        // Freelancer
+                        // FREELANCER
                         .requestMatchers(
                                 "/api/freelancer/me/**"
                         ).hasRole("FREELANCER")
@@ -151,17 +178,12 @@ public CorsConfigurationSource corsConfigurationSource(
                                 "/api/freelancers/*/cv"
                         ).hasRole("FREELANCER")
 
-                        // Entreprise
+                        // ENTREPRISE
                         .requestMatchers(
                                 "/api/entreprise/**"
                         ).hasRole("ENTREPRISE")
 
-                        // Projets
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/projets"
-                        ).authenticated()
-
+                        // PROJETS
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/projets/me"
@@ -171,6 +193,11 @@ public CorsConfigurationSource corsConfigurationSource(
                                 HttpMethod.GET,
                                 "/api/projets/publics"
                         ).hasRole("FREELANCER")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/projets"
+                        ).authenticated()
 
                         .requestMatchers(
                                 HttpMethod.POST,
@@ -191,7 +218,7 @@ public CorsConfigurationSource corsConfigurationSource(
                                 "/api/projets/**"
                         ).hasRole("ENTREPRISE")
 
-                        // IA et conversations
+                        // IA ET CONVERSATIONS
                         .requestMatchers(
                                 "/api/ai/**"
                         ).authenticated()
@@ -200,7 +227,7 @@ public CorsConfigurationSource corsConfigurationSource(
                                 "/api/conversations/**"
                         ).authenticated()
 
-                        // Paiements
+                        // PAIEMENTS
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/paiements/depot"
@@ -225,20 +252,25 @@ public CorsConfigurationSource corsConfigurationSource(
                                 "/api/paiements/**"
                         ).authenticated()
 
-                        // Dashboard et administration
+                        // DASHBOARD
                         .requestMatchers(
                                 "/api/dashboard/freelancer/**"
                         ).hasRole("FREELANCER")
 
+                        // ADMINISTRATION
                         .requestMatchers(
                                 "/admin/**"
                         ).hasRole("ADMIN")
 
+                        // TOUTES LES AUTRES ROUTES
                         .anyRequest().authenticated()
                 )
+
                 .formLogin(form -> form.disable())
+
                 .httpBasic(basic -> basic.disable());
 
+        // FILTRE JWT
         http.addFilterBefore(
                 jwtAuthenticationFilter,
                 UsernamePasswordAuthenticationFilter.class
