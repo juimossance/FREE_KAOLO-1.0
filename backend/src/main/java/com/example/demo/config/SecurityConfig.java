@@ -18,6 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 @EnableWebSecurity
@@ -44,19 +45,28 @@ public class SecurityConfig {
 
     // Configuration CORS pour le frontend local et le frontend Render
     @Bean
-
 public CorsConfigurationSource corsConfigurationSource(
         @Value("${app.cors.allowed-origins}") List<String> origins) {
 
     CorsConfiguration config = new CorsConfiguration();
+
     config.setAllowedOrigins(origins);
-    config.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-    config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+    config.setAllowedMethods(
+        List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+    );
+
+    config.setAllowedHeaders(
+        List.of("Authorization", "Content-Type")
+    );
+
     config.setAllowCredentials(true);
     config.setMaxAge(3600L);
 
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    UrlBasedCorsConfigurationSource source =
+        new UrlBasedCorsConfigurationSource();
+
     source.registerCorsConfiguration("/api/**", config);
+
     return source;
 }
 
