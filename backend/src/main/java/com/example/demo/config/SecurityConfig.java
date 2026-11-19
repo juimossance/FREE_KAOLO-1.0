@@ -30,28 +30,16 @@ public class SecurityConfig {
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
-
-    // ==============================
-    // PASSWORD ENCODER
-    // ==============================
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
-    // ==============================
-    // AUTHENTICATION MANAGER
-    // ==============================
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration
     ) throws Exception {
         return configuration.getAuthenticationManager();
     }
-
-    // ==============================
-    // CONFIGURATION CORS
-    // ==============================
     @Bean
     public CorsConfigurationSource corsConfigurationSource(
             @Value("${app.cors.allowed-origins}") List<String> origins
@@ -84,9 +72,6 @@ public class SecurityConfig {
         return source;
     }
 
-    // ==============================
-    // SECURITY FILTER CHAIN
-    // ==============================
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http
@@ -98,11 +83,7 @@ public class SecurityConfig {
                 .cors(cors -> {})
 
                 .authorizeHttpRequests(auth -> auth
-
-                        // OPTIONS : requêtes préliminaires CORS
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // AUTHENTIFICATION ET INSCRIPTION
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/register",
@@ -110,14 +91,12 @@ public class SecurityConfig {
                                 "/api/auth/register/prestataire",
                                 "/api/auth/register/entreprise"
                         ).permitAll()
-
-                        // ROUTES PUBLIQUES
                         .requestMatchers(
                                 "/error",
                                 "/uploads/**"
                         ).permitAll()
 
-                        // TESTS GROQ
+                
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/ai/test-groq-dns",
@@ -127,7 +106,7 @@ public class SecurityConfig {
                                 "/api/ai/test-network"
                         ).permitAll()
 
-                        // AUTHENTIFICATION UTILISATEUR
+                   
                         .requestMatchers(
                                 "/api/auth/me"
                         ).authenticated()
